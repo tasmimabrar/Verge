@@ -1,13 +1,14 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { LandingPage } from '@/features/landing';
+import { LoginPage } from '@/features/auth';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        {/* TODO: Add /login route */}
-        {/* TODO: Add /dashboard route (protected) */}
+        <Route path="/login" element={<LoginPage />} />
+        {/* TODO: Add protected dashboard route */}
       </Routes>
     </BrowserRouter>
   );

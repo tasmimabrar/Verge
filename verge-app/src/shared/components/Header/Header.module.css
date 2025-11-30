@@ -6,9 +6,9 @@
   left: 0;
   right: 0;
   height: 70px;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(15, 20, 25, 0.95); /* Dark background with transparency */
   backdrop-filter: blur(10px);
-  border-bottom: var(--border-width) solid var(--color-border);
+  border-bottom: var(--border-width) solid #374151; /* Dark border */
   z-index: 100;
 }
 
@@ -51,7 +51,7 @@
 
 .signIn {
   padding: var(--spacing-sm) var(--spacing-lg);
-  color: var(--color-text-primary);
+  color: #f9fafb; /* Light text */
   text-decoration: none;
   font-weight: var(--font-weight-medium);
   transition: color var(--transition-base);

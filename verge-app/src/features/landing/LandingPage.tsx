@@ -4,6 +4,7 @@ import { FiCheckCircle, FiClock, FiZap, FiLayout, FiTrendingUp, FiUsers } from '
 import { useScrollAnimation } from '@/shared/hooks/useScrollAnimation';
 import { Header } from '@/shared/components';
 import styles from './LandingPage.module.css';
+import phoneImg from '@/assets/stock-phone-img.png';
 
 // Feature Card Component with scroll animation
 const FeatureCard: FC<{ icon: typeof FiLayout; title: string; description: string }> = ({ 
@@ -124,14 +125,24 @@ export const LandingPage: FC = () => {
 
       {/* CTA Section */}
       <section className={styles.cta}>
-        <div className={styles.ctaContent}>
-          <h2 className={styles.ctaTitle}>Ready to take control?</h2>
-          <p className={styles.ctaSubtitle}>
-            Join students and teams who've reduced workflow fragmentation
-          </p>
-          <Link to="/login" className={styles.ctaButton}>
-            Start Your Journey
-          </Link>
+        <div className={styles.ctaContainer}>
+          <div className={styles.ctaImage}>
+            <img 
+              src={phoneImg} 
+              alt="Verge Mobile App" 
+              className={styles.phoneImage}
+            />
+          </div>
+          
+          <div className={styles.ctaContent}>
+            <h2 className={styles.ctaTitle}>Ready to take control?</h2>
+            <p className={styles.ctaSubtitle}>
+              Join students and teams who've reduced workflow fragmentation
+            </p>
+            <Link to="/login" className={styles.ctaButton}>
+              Start Your Journey
+            </Link>
+          </div>
         </div>
       </section>
 

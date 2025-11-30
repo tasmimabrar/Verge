@@ -2,7 +2,7 @@ import type { FC } from 'react';
 import { Link } from 'react-router-dom';
 import { FiCheckCircle, FiClock, FiZap, FiLayout, FiTrendingUp, FiUsers } from 'react-icons/fi';
 import { useScrollAnimation } from '@/shared/hooks/useScrollAnimation';
-import { Header } from '@/shared/components';
+import { LandingHeader } from '@/shared/components';
 import styles from './LandingPage.module.css';
 import phoneImg from '@/assets/stock-phone-img.png';
 
@@ -31,7 +31,7 @@ const FeatureCard: FC<{ icon: typeof FiLayout; title: string; description: strin
 export const LandingPage: FC = () => {
   return (
     <div className={styles.landing}>
-      <Header />
+      <LandingHeader />
       
       {/* Hero Section */}
       <section className={styles.hero}>

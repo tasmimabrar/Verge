@@ -22,6 +22,10 @@
   --color-bg-secondary: #f9fafb;
   --color-bg-tertiary: #f3f4f6;
   
+  /* Surface & UI Elements */
+  --color-surface: #ffffff;
+  --color-hover: #f3f4f6;
+  
   /* Text Colors */
   --color-text-primary: #111827;
   --color-text-secondary: #6b7280;
@@ -107,6 +111,7 @@
   /* ===== TRANSITIONS ===== */
   --transition-fast: 150ms ease-in-out;
   --transition-base: 200ms ease-in-out;
+  --transition-normal: 200ms ease-in-out;
   --transition-slow: 300ms ease-in-out;
   --transition-slower: 500ms ease-in-out;
   

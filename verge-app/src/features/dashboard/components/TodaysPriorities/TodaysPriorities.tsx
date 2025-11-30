@@ -4,6 +4,7 @@ import { FiArrowRight, FiCheckCircle } from 'react-icons/fi';
 import { Card, Loader, EmptyState, TaskCard } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useTodayTasks } from '@/shared/hooks/useTasks';
+import { useProjects } from '@/shared/hooks/useProjects';
 import styles from './TodaysPriorities.module.css';
 
 /**
@@ -23,6 +24,14 @@ export const TodaysPriorities: FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: tasks, isLoading, error } = useTodayTasks(user?.uid || '');
+  const { data: projects } = useProjects(user?.uid || '');
+  
+  /**
+   * Get project name by ID
+   */
+  const getProjectName = (projectId: string): string | undefined => {
+    return projects?.find(p => p.id === projectId)?.name;
+  };
 
   // Sort by priority (high → medium → low)
   const sortedTasks = tasks
@@ -77,6 +86,7 @@ export const TodaysPriorities: FC = () => {
                 key={task.id}
                 task={task}
                 variant="preview"
+                projectName={getProjectName(task.projectId)}
                 onClick={() => handleTaskClick(task.id)}
               />
             ))}

@@ -13,6 +13,7 @@
 
 import { format, isPast, isToday } from 'date-fns';
 import { FiCalendar, FiCheckCircle, FiClock } from 'react-icons/fi';
+import { toDate } from '@/shared/utils/dateHelpers';
 import { Card, Badge } from '@/shared/components';
 import type { Project } from '@/shared/types';
 import styles from './ProjectCard.module.css';
@@ -81,7 +82,8 @@ export const ProjectCard = ({
   onClick,
   className = '',
 }: ProjectCardProps) => {
-  const dueDate = project.dueDate.toDate();
+  // Handle both Timestamp and Date objects using helper
+  const dueDate = toDate(project.dueDate);
   const isOverdue = isPast(dueDate) && !isToday(dueDate) && project.status !== 'completed';
   const progress = taskStats ? calculateProgress(taskStats.completed, taskStats.total) : 0;
   

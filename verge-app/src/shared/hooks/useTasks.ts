@@ -21,14 +21,13 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
-  orderBy,
-  Timestamp,
   serverTimestamp,
   type DocumentData,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { queryKeys } from '@/lib/react-query/queryKeys';
 import type { Task, CreateData, UpdateData, TaskStatus, TaskPriority, Subtask } from '@/shared/types';
+import { toDate } from '@/shared/utils/dateHelpers';
 
 // ============================================================================
 // QUERY HOOKS (Fetching Data)
@@ -55,13 +54,14 @@ export const useTasks = (
   }
 ) => {
   return useQuery({
-    queryKey: queryKeys.tasks.list(filters || {}),
+    queryKey: queryKeys.tasks.list(userId, filters || {}),
     queryFn: async () => {
       const tasksRef = collection(db, 'tasks');
+      
+      // Build query - only use where clauses (no orderBy to avoid index requirements)
       let q = firestoreQuery(
         tasksRef, 
-        where('userId', '==', userId),
-        orderBy('dueDate', 'asc')
+        where('userId', '==', userId)
       );
       
       // Apply filters
@@ -76,10 +76,20 @@ export const useTasks = (
       }
       
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
+      const tasks = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       })) as Task[];
+      
+      // Sort client-side by dueDate to avoid Firestore index requirement
+      const sortedTasks = tasks.sort((a, b) => {
+        if (!a.dueDate || !b.dueDate) return 0;
+        const aDate = toDate(a.dueDate);
+        const bDate = toDate(b.dueDate);
+        return aDate.getTime() - bDate.getTime();
+      });
+      
+      return sortedTasks;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!userId, // Only run if userId exists
@@ -129,24 +139,35 @@ export const useTodayTasks = (userId: string) => {
   return useQuery({
     queryKey: queryKeys.dashboard.todayTasks(userId),
     queryFn: async () => {
+      if (!userId) return [];
+      
       const tasksRef = collection(db, 'tasks');
       
-      // Get start and end of today
+      // Simple query - just fetch user's tasks
+      const q = firestoreQuery(
+        tasksRef,
+        where('userId', '==', userId)
+      );
+      
+      const snapshot = await getDocs(q);
+      const allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+      
+      // Filter client-side for today's tasks
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date();
       endOfDay.setHours(23, 59, 59, 999);
       
-      const q = firestoreQuery(
-        tasksRef,
-        where('userId', '==', userId),
-        where('dueDate', '>=', Timestamp.fromDate(startOfDay)),
-        where('dueDate', '<=', Timestamp.fromDate(endOfDay)),
-        orderBy('dueDate', 'asc')
-      );
-      
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+      return allTasks.filter(task => {
+        if (!task.dueDate) return false;
+        const dueDate = toDate(task.dueDate);
+        return dueDate >= startOfDay && dueDate <= endOfDay;
+      }).sort((a, b) => {
+        if (!a.dueDate || !b.dueDate) return 0;
+        const aDate = toDate(a.dueDate);
+        const bDate = toDate(b.dueDate);
+        return aDate.getTime() - bDate.getTime();
+      });
     },
     staleTime: 2 * 60 * 1000, // 2 minutes - dashboard data refreshes more often
     enabled: !!userId,
@@ -167,22 +188,36 @@ export const useUpcomingTasks = (userId: string, days: number = 7) => {
   return useQuery({
     queryKey: queryKeys.dashboard.upcomingTasks(userId, days),
     queryFn: async () => {
+      if (!userId) return [];
+      
       const tasksRef = collection(db, 'tasks');
       
-      const today = new Date();
-      const futureDate = new Date();
-      futureDate.setDate(today.getDate() + days);
-      
+      // Simple query - just fetch user's tasks
       const q = firestoreQuery(
         tasksRef,
-        where('userId', '==', userId),
-        where('dueDate', '>=', Timestamp.fromDate(today)),
-        where('dueDate', '<=', Timestamp.fromDate(futureDate)),
-        orderBy('dueDate', 'asc')
+        where('userId', '==', userId)
       );
       
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+      const allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+      
+      // Filter client-side for upcoming tasks (next N days)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const futureDate = new Date();
+      futureDate.setDate(today.getDate() + days);
+      futureDate.setHours(23, 59, 59, 999);
+      
+      return allTasks.filter(task => {
+        if (!task.dueDate) return false;
+        const dueDate = toDate(task.dueDate);
+        return dueDate >= today && dueDate <= futureDate;
+      }).sort((a, b) => {
+        if (!a.dueDate || !b.dueDate) return 0;
+        const aDate = toDate(a.dueDate);
+        const bDate = toDate(b.dueDate);
+        return aDate.getTime() - bDate.getTime();
+      });
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!userId,
@@ -202,21 +237,32 @@ export const useOverdueTasks = (userId: string) => {
   return useQuery({
     queryKey: queryKeys.dashboard.overdueTasks(userId),
     queryFn: async () => {
+      if (!userId) return [];
+      
       const tasksRef = collection(db, 'tasks');
       
-      const now = new Date();
-      
+      // Simple query - just fetch user's tasks
       const q = firestoreQuery(
         tasksRef,
-        where('userId', '==', userId),
-        where('dueDate', '<', Timestamp.fromDate(now)),
-        where('status', '!=', 'done'), // Exclude completed tasks
-        orderBy('status'),
-        orderBy('dueDate', 'asc')
+        where('userId', '==', userId)
       );
       
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+      const allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+      
+      // Filter client-side for overdue tasks
+      const now = new Date();
+      
+      return allTasks.filter(task => {
+        if (!task.dueDate || task.status === 'done') return false;
+        const dueDate = toDate(task.dueDate);
+        return dueDate < now;
+      }).sort((a, b) => {
+        if (!a.dueDate || !b.dueDate) return 0;
+        const aDate = toDate(a.dueDate);
+        const bDate = toDate(b.dueDate);
+        return aDate.getTime() - bDate.getTime();
+      });
     },
     staleTime: 2 * 60 * 1000, // 2 minutes - important data
     enabled: !!userId,
@@ -239,14 +285,22 @@ export const useProjectTasks = (projectId: string | undefined) => {
       if (!projectId) return [];
       
       const tasksRef = collection(db, 'tasks');
+      // Remove orderBy to avoid composite index requirement
       const q = firestoreQuery(
         tasksRef,
-        where('projectId', '==', projectId),
-        orderBy('dueDate', 'asc')
+        where('projectId', '==', projectId)
       );
       
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+      const tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+      
+      // Sort client-side by dueDate
+      return tasks.sort((a, b) => {
+        if (!a.dueDate || !b.dueDate) return 0;
+        const aDate = toDate(a.dueDate);
+        const bDate = toDate(b.dueDate);
+        return aDate.getTime() - bDate.getTime();
+      });
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!projectId,
@@ -281,8 +335,13 @@ export const useCreateTask = () => {
   
   return useMutation({
     mutationFn: async (taskData: CreateData<Task>) => {
+      // Filter out undefined values - Firebase doesn't accept them
+      const cleanData = Object.fromEntries(
+        Object.entries(taskData).filter(([, value]) => value !== undefined)
+      );
+      
       const docRef = await addDoc(collection(db, 'tasks'), {
-        ...taskData,
+        ...cleanData,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -292,24 +351,24 @@ export const useCreateTask = () => {
       return { id: snapshot.id, ...snapshot.data() } as Task;
     },
     onSuccess: (newTask) => {
-      // Invalidate all task list queries
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.lists() });
+      // Invalidate AND refetch all task list queries immediately
+      // Use refetchType: 'all' to force refetch even if data is still "fresh"
+      queryClient.invalidateQueries({ 
+        queryKey: queryKeys.tasks.lists(),
+        refetchType: 'all',
+      });
       
-      // Invalidate dashboard queries
+      // Invalidate ALL dashboard queries (use prefix matching to catch all variations)
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.dashboard.todayTasks(newTask.userId) 
-      });
-      queryClient.invalidateQueries({ 
-        queryKey: queryKeys.dashboard.upcomingTasks(newTask.userId, 7) 
-      });
-      queryClient.invalidateQueries({ 
-        queryKey: queryKeys.dashboard.overdueTasks(newTask.userId) 
+        queryKey: ['dashboard'],
+        refetchType: 'all',
       });
       
       // Invalidate project tasks if applicable
       if (newTask.projectId) {
         queryClient.invalidateQueries({ 
-          queryKey: queryKeys.projects.tasks(newTask.projectId) 
+          queryKey: queryKeys.projects.tasks(newTask.projectId),
+          refetchType: 'all',
         });
       }
     },
@@ -336,9 +395,14 @@ export const useUpdateTask = () => {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: UpdateData<Task>) => {
+      // Filter out undefined values - Firebase doesn't accept them
+      const cleanUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([, value]) => value !== undefined)
+      );
+      
       const taskRef = doc(db, 'tasks', id);
       await updateDoc(taskRef, {
-        ...updates,
+        ...cleanUpdates,
         updatedAt: serverTimestamp(),
       } as DocumentData);
       
@@ -349,24 +413,27 @@ export const useUpdateTask = () => {
     onSuccess: (updatedTask) => {
       // Invalidate the specific task detail
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.tasks.detail(updatedTask.id) 
+        queryKey: queryKeys.tasks.detail(updatedTask.id),
+        refetchType: 'all',
       });
       
-      // Invalidate all task lists
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.lists() });
-      
-      // Invalidate dashboard queries
+      // Invalidate all task lists - force refetch
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.dashboard.todayTasks(updatedTask.userId) 
+        queryKey: queryKeys.tasks.lists(),
+        refetchType: 'all',
       });
+      
+      // Invalidate ALL dashboard queries (use prefix matching)
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.dashboard.overdueTasks(updatedTask.userId) 
+        queryKey: ['dashboard'],
+        refetchType: 'all',
       });
       
       // Invalidate project tasks
       if (updatedTask.projectId) {
         queryClient.invalidateQueries({ 
-          queryKey: queryKeys.projects.tasks(updatedTask.projectId) 
+          queryKey: queryKeys.projects.tasks(updatedTask.projectId),
+          refetchType: 'all',
         });
       }
     },
@@ -403,21 +470,23 @@ export const useDeleteTask = () => {
         queryKey: queryKeys.tasks.detail(deletedTask.id) 
       });
       
-      // Invalidate all task lists
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.lists() });
-      
-      // Invalidate dashboard queries
+      // Invalidate all task lists - force refetch
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.dashboard.todayTasks(deletedTask.userId) 
+        queryKey: queryKeys.tasks.lists(),
+        refetchType: 'all',
       });
+      
+      // Invalidate ALL dashboard queries (use prefix matching)
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.dashboard.overdueTasks(deletedTask.userId) 
+        queryKey: ['dashboard'],
+        refetchType: 'all',
       });
       
       // Invalidate project tasks
       if (deletedTask.projectId) {
         queryClient.invalidateQueries({ 
-          queryKey: queryKeys.projects.tasks(deletedTask.projectId) 
+          queryKey: queryKeys.projects.tasks(deletedTask.projectId),
+          refetchType: 'all',
         });
       }
     },

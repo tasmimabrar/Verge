@@ -13,6 +13,7 @@
 
 import { format, isToday, isTomorrow, isPast } from 'date-fns';
 import { FiCalendar, FiFolder, FiCheckSquare } from 'react-icons/fi';
+import { toDate } from '@/shared/utils/dateHelpers';
 import { Card, Badge } from '@/shared/components';
 import type { Task } from '@/shared/types';
 import styles from './TaskCard.module.css';
@@ -23,6 +24,9 @@ export interface TaskCardProps {
   
   /** Display variant */
   variant?: 'preview' | 'full';
+  
+  /** Project name (optional - for displaying project association) */
+  projectName?: string;
   
   /** Click handler (typically for navigation) */
   onClick?: (task: Task) => void;
@@ -87,10 +91,12 @@ const getStatusVariant = (status: string): 'status-todo' | 'status-in-progress' 
 export const TaskCard = ({
   task,
   variant = 'preview',
+  projectName,
   onClick,
   className = '',
 }: TaskCardProps) => {
-  const dueDate = task.dueDate.toDate();
+  // Handle both Timestamp and Date objects using helper
+  const dueDate = toDate(task.dueDate);
   const { text: dueDateText, isOverdue, isToday: isDueToday } = formatDueDate(dueDate);
   
   const handleClick = () => {
@@ -168,10 +174,10 @@ export const TaskCard = ({
             </span>
           </div>
           
-          {task.projectId && (
+          {task.projectId && projectName && (
             <div className={styles.detailItem}>
               <FiFolder size={16} />
-              <span>Project</span>
+              <span>{projectName}</span>
             </div>
           )}
           

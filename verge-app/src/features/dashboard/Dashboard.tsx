@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 import { FiCalendar, FiCheckSquare, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
-import { AppLayout, Loader, EmptyState } from '@/shared/components';
+import { AppLayout, EmptyState } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useDashboardStats } from '@/shared/hooks/useDashboard';
 import { StatCard } from './components/StatCard';
@@ -29,7 +29,15 @@ export const Dashboard: FC = () => {
         {/* Stats Grid */}
         {isLoading ? (
           <div className={styles.statsGrid}>
-            <Loader variant="skeleton" count={4} />
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className={styles.skeletonCard}>
+                <div className={styles.skeletonIcon} />
+                <div className={styles.skeletonContent}>
+                  <div className={styles.skeletonValue} />
+                  <div className={styles.skeletonLabel} />
+                </div>
+              </div>
+            ))}
           </div>
         ) : error ? (
           <EmptyState

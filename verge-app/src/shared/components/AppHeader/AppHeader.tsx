@@ -5,13 +5,17 @@ import {
   FiBell, 
   FiUser, 
   FiLogOut,
-  FiSettings
+  FiSettings,
+  FiMoon,
+  FiSun
 } from 'react-icons/fi';
 import { useAuth } from '@/shared/hooks';
+import { useTheme } from '@/shared/contexts';
 import styles from './AppHeader.module.css';
 
 export const AppHeader: FC = () => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -49,8 +53,12 @@ export const AppHeader: FC = () => {
               </span>
             </button>
 
-            {/* Dropdown (will be enhanced later) */}
+            {/* Dropdown */}
             <div className={styles.dropdown}>
+              <button className={styles.dropdownItem} onClick={toggleTheme}>
+                {theme === 'dark' ? <FiSun /> : <FiMoon />}
+                <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+              </button>
               <button className={styles.dropdownItem}>
                 <FiSettings />
                 <span>Settings</span>

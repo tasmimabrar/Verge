@@ -39,6 +39,7 @@ export type TaskPriority = typeof TaskPriority[keyof typeof TaskPriority];
  */
 export const ProjectStatus = {
   ACTIVE: 'active',
+  ON_HOLD: 'on_hold',
   COMPLETED: 'completed',
   ARCHIVED: 'archived',
 } as const;

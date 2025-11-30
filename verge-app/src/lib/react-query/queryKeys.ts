@@ -20,16 +20,16 @@ export const queryKeys = {
   tasks: {
     all: ['tasks'] as const,
     lists: () => ['tasks', 'list'] as const,
-    list: (filters: Record<string, unknown>) => ['tasks', 'list', filters] as const,
+    list: (userId: string, filters: Record<string, unknown>) => ['tasks', 'list', userId, filters] as const,
     detail: (taskId: string) => ['tasks', 'detail', taskId] as const,
-    byProject: (projectId: string) => ['tasks', 'project', projectId] as const,
+    byProject: (userId: string, projectId: string) => ['tasks', 'project', userId, projectId] as const,
   },
   
   // Project queries
   projects: {
     all: ['projects'] as const,
     lists: () => ['projects', 'list'] as const,
-    list: (filters: Record<string, unknown>) => ['projects', 'list', filters] as const,
+    list: (userId: string, filters: Record<string, unknown>) => ['projects', 'list', userId, filters] as const,
     detail: (projectId: string) => ['projects', 'detail', projectId] as const,
     tasks: (projectId: string) => ['projects', 'tasks', projectId] as const,
   },

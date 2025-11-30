@@ -21,13 +21,13 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
-  orderBy,
   serverTimestamp,
   type DocumentData,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { queryKeys } from '@/lib/react-query/queryKeys';
 import type { Project, CreateData, UpdateData, ProjectStatus } from '@/shared/types';
+import { toDate } from '@/shared/utils/dateHelpers';
 
 // ============================================================================
 // QUERY HOOKS (Fetching Data)
@@ -52,25 +52,37 @@ export const useProjects = (
   }
 ) => {
   return useQuery({
-    queryKey: queryKeys.projects.list(filters || {}),
+    queryKey: queryKeys.projects.list(userId, filters || {}),
     queryFn: async () => {
+      if (!userId) return [];
+      
       const projectsRef = collection(db, 'projects');
-      let q = firestoreQuery(
+      
+      // Simple query - just fetch user's projects
+      const q = firestoreQuery(
         projectsRef,
-        where('userId', '==', userId),
-        orderBy('dueDate', 'asc')
+        where('userId', '==', userId)
       );
       
-      // Apply status filter
-      if (filters?.status) {
-        q = firestoreQuery(q, where('status', '==', filters.status));
-      }
-      
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
+      const allProjects = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       })) as Project[];
+      
+      // Filter and sort client-side
+      let result = allProjects;
+      
+      if (filters?.status) {
+        result = result.filter(project => project.status === filters.status);
+      }
+      
+      return result.sort((a, b) => {
+        if (!a.dueDate || !b.dueDate) return 0;
+        const aDate = toDate(a.dueDate);
+        const bDate = toDate(b.dueDate);
+        return aDate.getTime() - bDate.getTime();
+      });
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!userId,
@@ -119,21 +131,33 @@ export const useProject = (projectId: string | undefined) => {
  */
 export const useActiveProjects = (userId: string) => {
   return useQuery({
-    queryKey: queryKeys.projects.list({ status: 'active' }),
+    queryKey: queryKeys.projects.list(userId, { status: 'active' }),
     queryFn: async () => {
+      if (!userId) return [];
+      
       const projectsRef = collection(db, 'projects');
+      
+      // Simple query - fetch all user projects
       const q = firestoreQuery(
         projectsRef,
-        where('userId', '==', userId),
-        where('status', '==', 'active'),
-        orderBy('dueDate', 'asc')
+        where('userId', '==', userId)
       );
       
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
+      const allProjects = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       })) as Project[];
+      
+      // Filter client-side for active projects and sort by dueDate
+      return allProjects
+        .filter(project => project.status === 'active')
+        .sort((a, b) => {
+          if (!a.dueDate || !b.dueDate) return 0;
+          const aDate = toDate(a.dueDate);
+          const bDate = toDate(b.dueDate);
+          return aDate.getTime() - bDate.getTime();
+        });
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!userId,
@@ -154,25 +178,39 @@ export const useUpcomingProjects = (userId: string, days: number = 7) => {
   return useQuery({
     queryKey: queryKeys.dashboard.upcomingDeadlines(userId),
     queryFn: async () => {
+      if (!userId) return [];
+      
       const projectsRef = collection(db, 'projects');
       
+      // Simple query - fetch user's projects
+      const q = firestoreQuery(
+        projectsRef,
+        where('userId', '==', userId)
+      );
+      
+      const snapshot = await getDocs(q);
+      const allProjects = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Project[];
+      
+      // Filter client-side for upcoming active projects
       const today = new Date();
       const futureDate = new Date();
       futureDate.setDate(today.getDate() + days);
       
-      const q = firestoreQuery(
-        projectsRef,
-        where('userId', '==', userId),
-        where('status', '==', 'active'),
-        where('dueDate', '<=', futureDate),
-        orderBy('dueDate', 'asc')
-      );
-      
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Project[];
+      return allProjects
+        .filter(project => {
+          if (project.status !== 'active' || !project.dueDate) return false;
+          const dueDate = toDate(project.dueDate);
+          return dueDate <= futureDate;
+        })
+        .sort((a, b) => {
+          if (!a.dueDate || !b.dueDate) return 0;
+          const aDate = toDate(a.dueDate);
+          const bDate = toDate(b.dueDate);
+          return aDate.getTime() - bDate.getTime();
+        });
     },
     staleTime: 2 * 60 * 1000, // 2 minutes - dashboard data
     enabled: !!userId,
@@ -205,8 +243,13 @@ export const useCreateProject = () => {
   
   return useMutation({
     mutationFn: async (projectData: CreateData<Project>) => {
+      // Filter out undefined values - Firebase doesn't accept them
+      const cleanData = Object.fromEntries(
+        Object.entries(projectData).filter(([, value]) => value !== undefined)
+      );
+      
       const docRef = await addDoc(collection(db, 'projects'), {
-        ...projectData,
+        ...cleanData,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -216,12 +259,17 @@ export const useCreateProject = () => {
       return { id: snapshot.id, ...snapshot.data() } as Project;
     },
     onSuccess: () => {
-      // Invalidate all project list queries
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
-      
-      // Invalidate dashboard upcoming deadlines
+      // Invalidate AND refetch all project list queries immediately
+      // Use refetchType: 'all' to force refetch even if data is still "fresh"
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.dashboard.upcomingDeadlines('') 
+        queryKey: queryKeys.projects.lists(),
+        refetchType: 'all',
+      });
+      
+      // Invalidate ALL dashboard queries (use prefix matching to catch all variations)
+      queryClient.invalidateQueries({ 
+        queryKey: ['dashboard'],
+        refetchType: 'all',
       });
     },
   });
@@ -247,9 +295,14 @@ export const useUpdateProject = () => {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: UpdateData<Project>) => {
+      // Filter out undefined values - Firebase doesn't accept them
+      const cleanUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([, value]) => value !== undefined)
+      );
+      
       const projectRef = doc(db, 'projects', id);
       await updateDoc(projectRef, {
-        ...updates,
+        ...cleanUpdates,
         updatedAt: serverTimestamp(),
       } as DocumentData);
       
@@ -258,22 +311,28 @@ export const useUpdateProject = () => {
       return { id: snapshot.id, ...snapshot.data() } as Project;
     },
     onSuccess: (updatedProject) => {
-      // Invalidate the specific project detail
+      // Invalidate the specific project detail - force refetch
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.projects.detail(updatedProject.id) 
+        queryKey: queryKeys.projects.detail(updatedProject.id),
+        refetchType: 'all',
       });
       
       // Invalidate all project lists
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
-      
-      // Invalidate dashboard
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.dashboard.upcomingDeadlines(updatedProject.userId) 
+        queryKey: queryKeys.projects.lists(),
+        refetchType: 'all',
+      });
+      
+      // Invalidate ALL dashboard queries (use prefix matching)
+      queryClient.invalidateQueries({ 
+        queryKey: ['dashboard'],
+        refetchType: 'all',
       });
       
       // Invalidate project tasks (might need to cascade updates)
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.projects.tasks(updatedProject.id) 
+        queryKey: queryKeys.projects.tasks(updatedProject.id),
+        refetchType: 'all',
       });
     },
   });
@@ -310,12 +369,16 @@ export const useDeleteProject = () => {
         queryKey: queryKeys.projects.detail(deletedProject.id) 
       });
       
-      // Invalidate all project lists
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
-      
-      // Invalidate dashboard
+      // Invalidate all project lists - force refetch
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.dashboard.upcomingDeadlines(deletedProject.userId) 
+        queryKey: queryKeys.projects.lists(),
+        refetchType: 'all',
+      });
+      
+      // Invalidate ALL dashboard queries (use prefix matching)
+      queryClient.invalidateQueries({ 
+        queryKey: ['dashboard'],
+        refetchType: 'all',
       });
       
       // Invalidate project tasks (orphaned tasks should be handled separately)

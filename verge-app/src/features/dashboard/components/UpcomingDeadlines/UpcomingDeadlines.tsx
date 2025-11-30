@@ -2,9 +2,12 @@ import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiArrowRight, FiCalendar } from 'react-icons/fi';
 import { format, isToday, isTomorrow, isThisWeek } from 'date-fns';
+import type { Task } from '@/shared/types';
+import { toDate } from '@/shared/utils/dateHelpers';
 import { Card, Loader, EmptyState, TaskCard } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useUpcomingTasks } from '@/shared/hooks/useTasks';
+import { useProjects } from '@/shared/hooks/useProjects';
 import styles from './UpcomingDeadlines.module.css';
 
 /**
@@ -24,6 +27,14 @@ export const UpcomingDeadlines: FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: tasks, isLoading, error } = useUpcomingTasks(user?.uid || '', 7);
+  const { data: projects } = useProjects(user?.uid || '');
+  
+  /**
+   * Get project name by ID
+   */
+  const getProjectName = (projectId: string): string | undefined => {
+    return projects?.find(p => p.id === projectId)?.name;
+  };
 
   /**
    * Format date label for grouping
@@ -38,6 +49,28 @@ export const UpcomingDeadlines: FC = () => {
 
   // Get first 7 tasks total
   const limitedTasks = tasks?.slice(0, 7);
+
+  /**
+   * Group tasks by date
+   * Returns a Map of date labels to arrays of tasks
+   */
+  const groupTasksByDate = (): Map<string, Task[]> => {
+    const grouped = new Map<string, Task[]>();
+    
+    if (!limitedTasks) return grouped;
+    
+    limitedTasks.forEach((task) => {
+      // Handle both Timestamp and Date objects using helper
+      const taskDate = toDate(task.dueDate);
+      const dateLabel = getDateLabel(taskDate);
+      const existing = grouped.get(dateLabel) || [];
+      grouped.set(dateLabel, [...existing, task]);
+    });
+    
+    return grouped;
+  };
+
+  const groupedTasks = groupTasksByDate();
 
   const handleTaskClick = (taskId: string) => {
     navigate(`/tasks/${taskId}`);
@@ -79,20 +112,22 @@ export const UpcomingDeadlines: FC = () => {
           />
         ) : (
           <div className={styles.taskList}>
-            {limitedTasks.map((task) => {
-              const dateLabel = getDateLabel(task.dueDate.toDate());
-              
-              return (
-                <div key={task.id} className={styles.taskGroup}>
-                  <div className={styles.dateLabel}>{dateLabel}</div>
-                  <TaskCard
-                    task={task}
-                    variant="preview"
-                    onClick={() => handleTaskClick(task.id)}
-                  />
+            {Array.from(groupedTasks.entries()).map(([dateLabel, tasksForDate]) => (
+              <div key={dateLabel} className={styles.taskGroup}>
+                <div className={styles.dateLabel}>{dateLabel}</div>
+                <div className={styles.taskGroupList}>
+                  {tasksForDate.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      variant="preview"
+                      projectName={getProjectName(task.projectId)}
+                      onClick={() => handleTaskClick(task.id)}
+                    />
+                  ))}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
       </div>

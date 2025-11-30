@@ -21,6 +21,7 @@ import {
 import { db } from '@/lib/firebase';
 import { queryKeys } from '@/lib/react-query/queryKeys';
 import type { DashboardStats, Task } from '@/shared/types';
+import { toDate } from '@/shared/utils/dateHelpers';
 
 // ============================================================================
 // DASHBOARD STATISTICS HOOKS
@@ -99,8 +100,8 @@ export const useDashboardStats = (userId: string) => {
       
       // Aggregate task data
       tasks.forEach((task) => {
-        const dueDate = task.dueDate.toDate();
-        const updatedDate = task.updatedAt.toDate();
+        const dueDate = toDate(task.dueDate);
+        const updatedDate = toDate(task.updatedAt);
         
         // Count by status
         if (task.status === 'todo') stats.byStatus.todo++;
@@ -229,7 +230,7 @@ export const useProductivityTrend = (userId: string, days: number = 7) => {
       
       // Count completed tasks per day
       tasks.forEach((task) => {
-        const completionDate = task.updatedAt.toDate();
+        const completionDate = toDate(task.updatedAt);
         const dateKey = completionDate.toISOString().split('T')[0];
         if (dailyCounts[dateKey] !== undefined) {
           dailyCounts[dateKey]++;

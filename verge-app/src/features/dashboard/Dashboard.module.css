@@ -36,7 +36,15 @@
   gap: var(--spacing-lg);
 }
 
-/* Content Area */
+/* Widgets Grid - Two columns for task widgets */
+.widgetsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-xl);
+  margin-top: var(--spacing-lg);
+}
+
+/* Content Area (deprecated - keeping for reference) */
 .contentArea {
   display: flex;
   flex-direction: column;
@@ -76,6 +84,11 @@
   .statsGrid {
     grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-md);
+  }
+
+  .widgetsGrid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
   }
 
   .title {

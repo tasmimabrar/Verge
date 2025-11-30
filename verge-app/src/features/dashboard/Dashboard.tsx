@@ -4,6 +4,8 @@ import { AppLayout, Loader, EmptyState } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useDashboardStats } from '@/shared/hooks/useDashboard';
 import { StatCard } from './components/StatCard';
+import { TodaysPriorities } from './components/TodaysPriorities';
+import { UpcomingDeadlines } from './components/UpcomingDeadlines';
 import styles from './Dashboard.module.css';
 
 export const Dashboard: FC = () => {
@@ -63,14 +65,10 @@ export const Dashboard: FC = () => {
           </div>
         ) : null}
 
-        {/* Main Content Area - Widgets will go here in next tasks */}
-        <div className={styles.contentArea}>
-          <div className={styles.placeholderCard}>
-            <h2 className={styles.placeholderTitle}>Your workspace is ready</h2>
-            <p className={styles.placeholderText}>
-              Start adding tasks and projects to see them here.
-            </p>
-          </div>
+        {/* Main Content Area - Task Widgets */}
+        <div className={styles.widgetsGrid}>
+          <TodaysPriorities />
+          <UpcomingDeadlines />
         </div>
       </div>
     </AppLayout>

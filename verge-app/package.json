@@ -12,6 +12,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.90.11",
     "@tanstack/react-query-devtools": "^5.91.1",
+    "@tanstack/react-query-persist-client": "^5.90.13",
     "date-fns": "^4.1.0",
     "firebase": "^12.6.0",
     "react": "^19.2.0",

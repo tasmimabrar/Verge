@@ -11,7 +11,6 @@ import { AppLayout, Card, Button, Loader, EmptyState, Badge } from '@/shared/com
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useTask, useUpdateTask, useDeleteTask } from '@/shared/hooks/useTasks';
 import { useProjects } from '@/shared/hooks/useProjects';
-import type { TaskPriority, TaskStatus } from '@/shared/types';
 import styles from './TaskDetail.module.css';
 
 interface TaskFormData {

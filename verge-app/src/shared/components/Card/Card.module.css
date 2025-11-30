@@ -1,0 +1,77 @@
+/**
+ * Card Component Styles
+ * 
+ * Uses CSS variables for full theme support.
+ * Smooth transitions for interactive states.
+ */
+
+.card {
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+/* Variants */
+.default {
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.elevated {
+  border: none;
+  box-shadow: var(--shadow-md);
+}
+
+.outline {
+  border: 2px solid var(--color-border);
+  box-shadow: none;
+}
+
+/* Padding sizes */
+.padding-none {
+  padding: 0;
+}
+
+.padding-small {
+  padding: var(--spacing-sm);
+}
+
+.padding-medium {
+  padding: var(--spacing-md);
+}
+
+.padding-large {
+  padding: var(--spacing-lg);
+}
+
+/* Interactive state (when onClick is provided) */
+.interactive {
+  cursor: pointer;
+  user-select: none;
+}
+
+.interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.interactive:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-md);
+}
+
+.interactive:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Smooth hover on elevated variant */
+.elevated.interactive:hover {
+  box-shadow: var(--shadow-xl);
+}
+
+/* Outline variant hover */
+.outline.interactive:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}

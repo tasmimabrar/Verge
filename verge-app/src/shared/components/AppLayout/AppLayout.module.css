@@ -1,0 +1,32 @@
+/* AppLayout Component - Main authenticated app structure */
+
+.appLayout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-bg-primary);
+}
+
+.mainWrapper {
+  flex: 1;
+  margin-left: 260px; /* Sidebar width */
+  display: flex;
+  flex-direction: column;
+}
+
+.mainContent {
+  margin-top: 70px; /* AppHeader height */
+  padding: var(--spacing-xl);
+  min-height: calc(100vh - 70px);
+  overflow-y: auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mainWrapper {
+    margin-left: 70px; /* Collapsed sidebar width */
+  }
+  
+  .mainContent {
+    padding: var(--spacing-md);
+  }
+}

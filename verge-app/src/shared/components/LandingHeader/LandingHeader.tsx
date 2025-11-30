@@ -2,10 +2,10 @@ import type { FC } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks';
 import { FiLogOut } from 'react-icons/fi';
-import styles from './Header.module.css';
+import styles from './LandingHeader.module.css';
 import vergeLogoImg from '@/assets/verge_logo.png';
 
-export const Header: FC = () => {
+export const LandingHeader: FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
 

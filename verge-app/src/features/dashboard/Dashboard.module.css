@@ -36,12 +36,25 @@
   gap: var(--spacing-lg);
 }
 
+/* Main Content - Widgets + Sidebar Layout */
+.mainContent {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: var(--spacing-xl);
+  margin-top: var(--spacing-lg);
+}
+
 /* Widgets Grid - Two columns for task widgets */
 .widgetsGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: var(--spacing-xl);
-  margin-top: var(--spacing-lg);
+}
+
+/* Sidebar for Quick Actions */
+.sidebar {
+  display: flex;
+  flex-direction: column;
 }
 
 /* Content Area (deprecated - keeping for reference) */
@@ -80,15 +93,20 @@
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
-  .statsGrid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-md);
+@media (max-width: 1024px) {
+  .mainContent {
+    grid-template-columns: 1fr;
   }
 
   .widgetsGrid {
     grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
+  }
+}
+
+@media (max-width: 768px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
   }
 
   .title {

@@ -6,6 +6,7 @@ import { useDashboardStats } from '@/shared/hooks/useDashboard';
 import { StatCard } from './components/StatCard';
 import { TodaysPriorities } from './components/TodaysPriorities';
 import { UpcomingDeadlines } from './components/UpcomingDeadlines';
+import { QuickActions } from './components/QuickActions';
 import styles from './Dashboard.module.css';
 
 export const Dashboard: FC = () => {
@@ -65,10 +66,18 @@ export const Dashboard: FC = () => {
           </div>
         ) : null}
 
-        {/* Main Content Area - Task Widgets */}
-        <div className={styles.widgetsGrid}>
-          <TodaysPriorities />
-          <UpcomingDeadlines />
+        {/* Main Content Area - Task Widgets + Quick Actions */}
+        <div className={styles.mainContent}>
+          {/* Task Widgets */}
+          <div className={styles.widgetsGrid}>
+            <TodaysPriorities />
+            <UpcomingDeadlines />
+          </div>
+
+          {/* Quick Actions Sidebar */}
+          <aside className={styles.sidebar}>
+            <QuickActions />
+          </aside>
         </div>
       </div>
     </AppLayout>

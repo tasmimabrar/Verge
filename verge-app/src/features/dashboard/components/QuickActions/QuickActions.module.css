@@ -1,0 +1,122 @@
+/* QuickActions Component Styles */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.actionsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+}
+
+.actionButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xl);
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  background: var(--color-bg-secondary);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  min-height: 120px;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+/* Primary variant (Add Task) */
+.primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+
+  &:hover {
+    background: var(--color-primary);
+    filter: brightness(1.1);
+    box-shadow: var(--shadow-lg);
+  }
+
+  & .iconWrapper {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  & .label {
+    color: white;
+  }
+}
+
+/* Secondary variant */
+.secondary {
+  &:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-bg);
+  }
+
+  & .iconWrapper {
+    color: var(--color-primary);
+  }
+}
+
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--border-radius-lg);
+  font-size: 24px;
+  background: var(--color-bg-tertiary);
+  transition: all var(--transition-normal);
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .actionsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .actionButton {
+    min-height: 80px;
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: var(--spacing-lg);
+  }
+
+  .iconWrapper {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .label {
+    text-align: left;
+  }
+}

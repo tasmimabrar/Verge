@@ -1,19 +1,24 @@
 import type { FC } from 'react';
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FiMail, FiLock, FiEye, FiEyeOff, FiArrowRight } from 'react-icons/fi';
+import { useAuth } from '@/shared/hooks';
 import styles from './LoginPage.module.css';
 import appPreviewImg from '@/assets/verge_logo.png'; // TODO: Replace with actual app screenshot
 
 const TYPING_WORDS = ['reimagined', 'redefined', 'simplified', 'transformed'];
 
 export const LoginPage: FC = () => {
+  const { login, signup } = useAuth();
+  const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [animatedText, setAnimatedText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [wordIndex, setWordIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -70,10 +75,34 @@ export const LoginPage: FC = () => {
     return () => clearTimeout(timeout);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement authentication logic
-    console.log('Form submitted:', formData);
+    setError('');
+    setIsLoading(true);
+
+    try {
+      // Validate passwords match for signup
+      if (isSignUp && formData.password !== formData.confirmPassword) {
+        setError('Passwords do not match');
+        setIsLoading(false);
+        return;
+      }
+
+      // Call appropriate auth function
+      if (isSignUp) {
+        await signup(formData.email, formData.password);
+      } else {
+        await login(formData.email, formData.password);
+      }
+
+      // Redirect to dashboard on success
+      navigate('/dashboard');
+    } catch (err) {
+      setError('Authentication failed. Please try again.');
+      console.error('Auth error:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -227,9 +256,16 @@ export const LoginPage: FC = () => {
               </div>
             )}
 
-            <button type="submit" className={styles.submitButton}>
-              {isSignUp ? 'Create Account' : 'Sign In'}
-              <FiArrowRight className={styles.buttonIcon} />
+            {/* Error Message */}
+            {error && (
+              <div className={styles.errorMessage}>
+                {error}
+              </div>
+            )}
+
+            <button type="submit" className={styles.submitButton} disabled={isLoading}>
+              {isLoading ? 'Loading...' : (isSignUp ? 'Create Account' : 'Sign In')}
+              {!isLoading && <FiArrowRight className={styles.buttonIcon} />}
             </button>
           </form>
 

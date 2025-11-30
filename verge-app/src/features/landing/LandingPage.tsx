@@ -137,7 +137,7 @@ export const LandingPage: FC = () => {
           <div className={styles.ctaContent}>
             <h2 className={styles.ctaTitle}>Ready to take control?</h2>
             <p className={styles.ctaSubtitle}>
-              Join students and teams who've reduced workflow fragmentation
+              Join students and teams to reduce your workflow fragmentation
             </p>
             <Link to="/login" className={styles.ctaButton}>
               Start Your Journey

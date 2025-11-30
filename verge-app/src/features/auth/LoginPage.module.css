@@ -290,6 +290,19 @@
   }
 }
 
+/* Error Message */
+.errorMessage {
+  width: 100%;
+  padding: var(--spacing-md);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--border-radius-md);
+  color: #fca5a5;
+  font-size: var(--font-size-sm);
+  text-align: center;
+  margin-top: var(--spacing-md);
+}
+
 .submitButton {
   width: 100%;
   padding: var(--spacing-md) var(--spacing-lg);
@@ -307,14 +320,19 @@
   transition: all var(--transition-base);
   margin-top: var(--spacing-md);
   
-  &:hover {
+  &:hover:not(:disabled) {
     background: var(--color-primary-hover);
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
   }
   
-  &:active {
+  &:active:not(:disabled) {
     transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 }
 

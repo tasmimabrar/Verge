@@ -1,0 +1,42 @@
+/**
+ * React Query Keys
+ * 
+ * Centralized query key management for consistent caching and invalidation.
+ * Organized by feature domain for easy cache management.
+ * 
+ * Pattern: [domain, ...identifiers]
+ * Example: ['tasks', userId, { status: 'active' }]
+ */
+
+export const queryKeys = {
+  // User queries
+  user: {
+    all: ['user'] as const,
+    detail: (userId: string) => ['user', userId] as const,
+    settings: (userId: string) => ['user', userId, 'settings'] as const,
+  },
+  
+  // Task queries
+  tasks: {
+    all: ['tasks'] as const,
+    lists: () => ['tasks', 'list'] as const,
+    list: (filters: Record<string, unknown>) => ['tasks', 'list', filters] as const,
+    detail: (taskId: string) => ['tasks', 'detail', taskId] as const,
+    byProject: (projectId: string) => ['tasks', 'project', projectId] as const,
+  },
+  
+  // Project queries
+  projects: {
+    all: ['projects'] as const,
+    lists: () => ['projects', 'list'] as const,
+    list: (filters: Record<string, unknown>) => ['projects', 'list', filters] as const,
+    detail: (projectId: string) => ['projects', 'detail', projectId] as const,
+  },
+  
+  // Dashboard queries
+  dashboard: {
+    stats: (userId: string) => ['dashboard', 'stats', userId] as const,
+    todayTasks: (userId: string) => ['dashboard', 'today-tasks', userId] as const,
+    upcomingDeadlines: (userId: string) => ['dashboard', 'upcoming-deadlines', userId] as const,
+  },
+} as const;

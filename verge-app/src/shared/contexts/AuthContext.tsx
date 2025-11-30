@@ -1,5 +1,12 @@
 import type { ReactNode } from 'react';
 import { createContext, useState, useEffect } from 'react';
+import {
+  signupWithEmail,
+  loginWithEmail,
+  loginWithGoogle,
+  logout as firebaseLogout,
+  onAuthStateChange,
+} from '@/lib/firebase';
 
 interface User {
   uid: string;
@@ -11,9 +18,9 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  // These will be implemented when Firebase is set up
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -23,53 +30,69 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // TODO: Replace with Firebase auth state listener when Firebase is set up
+  // Listen to Firebase auth state changes
   useEffect(() => {
-    // Simulate checking for existing session
-    const checkAuth = async () => {
-      // For now, check localStorage for mock auth state
-      const mockUser = localStorage.getItem('mockUser');
-      if (mockUser) {
-        setUser(JSON.parse(mockUser));
+    const unsubscribe = onAuthStateChange((firebaseUser) => {
+      if (firebaseUser) {
+        // User is signed in
+        setUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+        });
+      } else {
+        // User is signed out
+        setUser(null);
       }
       setIsLoading(false);
-    };
+    });
 
-    checkAuth();
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
-  // Mock login function - will be replaced with Firebase auth
+  // Login with email and password
   const login = async (email: string, password: string) => {
-    console.log('Login called with:', email, password);
-    // TODO: Implement Firebase login
-    const mockUser = {
-      uid: 'mock-user-id',
-      email,
-      displayName: email.split('@')[0],
-    };
-    localStorage.setItem('mockUser', JSON.stringify(mockUser));
-    setUser(mockUser);
+    try {
+      await loginWithEmail(email, password);
+      // User state will be updated by onAuthStateChange listener
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   };
 
-  // Mock signup function - will be replaced with Firebase auth
+  // Sign up with email and password
   const signup = async (email: string, password: string) => {
-    console.log('Signup called with:', email, password);
-    // TODO: Implement Firebase signup
-    const mockUser = {
-      uid: 'mock-user-id',
-      email,
-      displayName: email.split('@')[0],
-    };
-    localStorage.setItem('mockUser', JSON.stringify(mockUser));
-    setUser(mockUser);
+    try {
+      await signupWithEmail(email, password);
+      // User state will be updated by onAuthStateChange listener
+    } catch (error) {
+      console.error('Signup error:', error);
+      throw error;
+    }
   };
 
-  // Mock logout function - will be replaced with Firebase auth
+  // Login with Google
+  const handleLoginWithGoogle = async () => {
+    try {
+      await loginWithGoogle();
+      // User state will be updated by onAuthStateChange listener
+    } catch (error) {
+      console.error('Google login error:', error);
+      throw error;
+    }
+  };
+
+  // Logout
   const logout = async () => {
-    console.log('Logout called');
-    // TODO: Implement Firebase logout
-    localStorage.removeItem('mockUser');
-    setUser(null);
+    try {
+      await firebaseLogout();
+      // User state will be updated by onAuthStateChange listener
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
+    }
   };
 
   const value = {
@@ -78,6 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isAuthenticated: !!user,
     login,
     signup,
+    loginWithGoogle: handleLoginWithGoogle,
     logout,
   };
 

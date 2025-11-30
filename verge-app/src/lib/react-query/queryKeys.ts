@@ -31,12 +31,15 @@ export const queryKeys = {
     lists: () => ['projects', 'list'] as const,
     list: (filters: Record<string, unknown>) => ['projects', 'list', filters] as const,
     detail: (projectId: string) => ['projects', 'detail', projectId] as const,
+    tasks: (projectId: string) => ['projects', 'tasks', projectId] as const,
   },
   
   // Dashboard queries
   dashboard: {
     stats: (userId: string) => ['dashboard', 'stats', userId] as const,
     todayTasks: (userId: string) => ['dashboard', 'today-tasks', userId] as const,
+    upcomingTasks: (userId: string, days: number) => ['dashboard', 'upcoming-tasks', userId, days] as const,
     upcomingDeadlines: (userId: string) => ['dashboard', 'upcoming-deadlines', userId] as const,
+    overdueTasks: (userId: string) => ['dashboard', 'overdue-tasks', userId] as const,
   },
 } as const;

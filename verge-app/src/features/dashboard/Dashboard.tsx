@@ -1,11 +1,11 @@
 import type { FC } from 'react';
-import { Header } from '@/shared/components';
+import { AppHeader } from '@/shared/components';
 import styles from './Dashboard.module.css';
 
 export const Dashboard: FC = () => {
   return (
     <div className={styles.dashboard}>
-      <Header />
+      <AppHeader />
       
       <main className={styles.mainContent}>
         <div className={styles.container}>

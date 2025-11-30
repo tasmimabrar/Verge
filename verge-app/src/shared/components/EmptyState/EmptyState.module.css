@@ -1,0 +1,63 @@
+/**
+ * EmptyState Component Styles
+ * 
+ * Centered layout with generous spacing.
+ * Muted colors to indicate absence of content.
+ */
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--spacing-xl) var(--spacing-md);
+  min-height: 300px;
+  gap: var(--spacing-md);
+}
+
+.icon {
+  color: var(--color-text-tertiary);
+  opacity: 0.6;
+  margin-bottom: var(--spacing-sm);
+  
+  /* Ensure icon is properly sized */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.title {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.message {
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+  max-width: 400px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.action {
+  margin-top: var(--spacing-md);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .emptyState {
+    padding: var(--spacing-lg) var(--spacing-md);
+    min-height: 250px;
+  }
+  
+  .title {
+    font-size: var(--font-size-lg);
+  }
+  
+  .message {
+    font-size: var(--font-size-sm);
+  }
+}

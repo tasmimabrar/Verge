@@ -21,3 +21,10 @@ export type { LoaderProps } from './Loader';
 
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
+
+// Domain-specific components
+export { TaskCard } from './TaskCard';
+export type { TaskCardProps } from './TaskCard';
+
+export { ProjectCard } from './ProjectCard';
+export type { ProjectCardProps } from './ProjectCard';

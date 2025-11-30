@@ -85,16 +85,34 @@
 
 /* Typing animation wrapper */
 .typingWrapper {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   position: relative;
   background: rgba(255, 255, 255, 0.2);
   padding: 0 var(--spacing-sm);
   border-radius: var(--border-radius-md);
-  min-width: 200px; /* Reserve space to prevent layout shift */
+  transition: width var(--transition-fast);
+  width: fit-content;
+  vertical-align: baseline;
+}
+
+/* Reserve space using pseudo-element to prevent layout shift */
+.typingWrapper::before {
+  content: '\200B'; /* Zero-width space */
+  display: inline-block;
+  width: 0;
+  visibility: hidden;
 }
 
 .typingText {
-  display: inline;
+  display: inline-block;
+  white-space: nowrap;
+  line-height: inherit;
+}
+
+/* Ensure text never fully collapses */
+.typingText:empty::before {
+  content: '\200B'; /* Zero-width space when empty */
 }
 
 .cursor {

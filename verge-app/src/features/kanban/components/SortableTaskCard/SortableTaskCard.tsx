@@ -3,12 +3,14 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { TaskCard } from '@/shared/components';
 import type { Task, TaskStatus } from '@/shared/types';
+import type { TaskPriority } from '@/shared/components/PriorityDropdown';
 import { useNavigate } from 'react-router-dom';
 import styles from './SortableTaskCard.module.css';
 
 export interface SortableTaskCardProps {
   task: Task;
   onStatusChange: (taskId: string, newStatus: TaskStatus) => void;
+  onPriorityChange: (taskId: string, newPriority: TaskPriority) => void;
 }
 
 /**
@@ -17,7 +19,7 @@ export interface SortableTaskCardProps {
  * Wrapper around TaskCard that makes it draggable/sortable.
  * Used within Kanban columns.
  */
-export const SortableTaskCard: FC<SortableTaskCardProps> = ({ task, onStatusChange }) => {
+export const SortableTaskCard: FC<SortableTaskCardProps> = ({ task, onStatusChange, onPriorityChange }) => {
   const navigate = useNavigate();
   const {
     attributes,
@@ -43,6 +45,10 @@ export const SortableTaskCard: FC<SortableTaskCardProps> = ({ task, onStatusChan
     onStatusChange(taskId, newStatus);
   };
 
+  const handlePriorityChange = (taskId: string, newPriority: TaskPriority) => {
+    onPriorityChange(taskId, newPriority);
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -56,6 +62,7 @@ export const SortableTaskCard: FC<SortableTaskCardProps> = ({ task, onStatusChan
         variant="preview"
         onClick={handleClick}
         onStatusChange={handleStatusChange}
+        onPriorityChange={handlePriorityChange}
       />
     </div>
   );

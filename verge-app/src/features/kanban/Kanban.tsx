@@ -16,6 +16,7 @@ import { AppLayout, Loader, EmptyState, TaskCard } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useTasks, useUpdateTask } from '@/shared/hooks/useTasks';
 import type { Task, TaskStatus } from '@/shared/types';
+import type { TaskPriority } from '@/shared/components/PriorityDropdown';
 import { toast } from 'sonner';
 import { FiAlertCircle } from 'react-icons/fi';
 import { KanbanColumn } from './components/KanbanColumn/KanbanColumn';
@@ -134,6 +135,22 @@ export const Kanban: FC = () => {
     }
   };
 
+  const handlePriorityChange = async (taskId: string, newPriority: TaskPriority) => {
+    if (!user) return;
+
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        priority: newPriority,
+        userId: user.uid,
+      });
+      toast.success(`Task priority changed to ${newPriority}`);
+    } catch (err) {
+      console.error('Failed to update priority:', err);
+      toast.error('Failed to update task priority');
+    }
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -204,6 +221,7 @@ export const Kanban: FC = () => {
                 title={column.title}
                 tasks={tasksByStatus[column.id]}
                 onStatusChange={handleStatusChange}
+                onPriorityChange={handlePriorityChange}
               />
             ))}
           </div>

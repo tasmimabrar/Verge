@@ -44,7 +44,7 @@ export interface ProjectCardProps {
 const getStatusVariant = (status: string): 'success' | 'info' | 'warning' | 'default' => {
   if (status === 'completed') return 'success';
   if (status === 'active') return 'info';
-  if (status === 'on_hold') return 'warning';
+  if (status === 'on hold') return 'warning';
   return 'default';
 };
 

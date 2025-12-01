@@ -172,10 +172,14 @@
 }
 
 .taskDot {
-  width: 8px;
-  height: 8px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
 .taskDot.priority-high {
@@ -188,6 +192,14 @@
 
 .taskDot.priority-low {
   background: var(--color-success);
+}
+
+.statusIcon {
+  width: 10px;
+  height: 10px;
+  color: #000000;
+  stroke-width: 2.5;
+  flex-shrink: 0;
 }
 
 .moreTasks {
@@ -315,8 +327,13 @@
   }
 
   .taskDot {
-    width: 6px;
-    height: 6px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .statusIcon {
+    width: 9px;
+    height: 9px;
   }
 }
 

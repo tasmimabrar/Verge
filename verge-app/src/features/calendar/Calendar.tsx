@@ -1,34 +1,60 @@
 import type { FC } from 'react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, addMonths, subMonths } from 'date-fns';
-import { FiChevronLeft, FiChevronRight, FiCalendar } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiCalendar, FiCheckCircle, FiCircle, FiClock, FiPause } from 'react-icons/fi';
 import { AppLayout, Button, Card, Loader, EmptyState, TaskCard } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { useTasks } from '@/shared/hooks/useTasks';
+import { useTasks, useUpdateTask } from '@/shared/hooks/useTasks';
 import { toDate } from '@/shared/utils/dateHelpers';
 import type { Task } from '@/shared/types';
+import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
+import type { TaskPriority } from '@/shared/components/PriorityDropdown';
+import { toast } from 'sonner';
 import styles from './Calendar.module.css';
 
 /**
  * Calendar Component
  * 
- * Monthly calendar view showing tasks as priority-colored dots.
+ * Monthly calendar view showing tasks as priority-colored dots with status icons.
  * Core HCI requirement - 80% of survey respondents valued calendar view.
  * 
  * Features:
  * - Monthly grid layout (7 columns x 5-6 rows)
- * - Tasks shown as colored dots (red=high, yellow=medium, green=low)
+ * - Tasks shown as colored dots with status icons (priority color background, black icon)
  * - Click date to view tasks in side panel
  * - Month navigation (prev/next arrows, today button)
  * - Click task to navigate to detail
  */
+
+/**
+ * Get status icon component based on task status
+ */
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case 'done':
+      return FiCheckCircle;
+    case 'in_progress':
+      return FiClock;
+    case 'postponed':
+      return FiPause;
+    case 'todo':
+    default:
+      return FiCircle;
+  }
+};
+
 export const Calendar: FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // Fetch all user tasks
   const { data: allTasks, isLoading } = useTasks(user?.uid || '');
+  
+  // Mutation for updating task status
+  const updateTask = useUpdateTask();
 
   // Get days to display in calendar
   const monthStart = startOfMonth(currentMonth);
@@ -75,6 +101,38 @@ export const Calendar: FC = () => {
 
   const handleCloseSidePanel = () => {
     setSelectedDate(null);
+  };
+
+  const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+    if (!user) return;
+    
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        status: newStatus,
+        userId: user.uid,
+      });
+      toast.success('Task status updated!');
+    } catch (err) {
+      console.error('Failed to update task status:', err);
+      toast.error('Failed to update task status');
+    }
+  };
+
+  const handlePriorityChange = async (taskId: string, newPriority: TaskPriority) => {
+    if (!user) return;
+    
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        priority: newPriority,
+        userId: user.uid,
+      });
+      toast.success('Task priority updated!');
+    } catch (err) {
+      console.error('Failed to update task priority:', err);
+      toast.error('Failed to update task priority');
+    }
   };
 
   return (
@@ -163,19 +221,24 @@ export const Calendar: FC = () => {
                           {format(date, 'd')}
                         </span>
                         
-                        {/* Task indicators */}
+                        {/* Task indicators - status icons with priority-colored backgrounds */}
                         {tasks.length > 0 && (
                           <div className={styles.taskIndicators}>
-                            {tasks.slice(0, 3).map(task => (
-                              <span
-                                key={task.id}
-                                className={`${styles.taskDot} ${styles[`priority-${task.priority}`]}`}
-                                title={task.title}
-                              />
-                            ))}
-                            {tasks.length > 3 && (
+                            {tasks.slice(0, 7).map(task => {
+                              const StatusIcon = getStatusIcon(task.status);
+                              return (
+                                <span
+                                  key={task.id}
+                                  className={`${styles.taskDot} ${styles[`priority-${task.priority}`]}`}
+                                  title={`${task.title} - ${task.status}`}
+                                >
+                                  <StatusIcon className={styles.statusIcon} />
+                                </span>
+                              );
+                            })}
+                            {tasks.length > 7 && (
                               <span className={styles.moreTasks}>
-                                +{tasks.length - 3}
+                                +{tasks.length - 7}
                               </span>
                             )}
                           </div>
@@ -224,6 +287,9 @@ export const Calendar: FC = () => {
                         key={task.id}
                         task={task}
                         variant="preview"
+                        onClick={() => navigate(`/tasks/${task.id}`)}
+                        onStatusChange={handleStatusChange}
+                        onPriorityChange={handlePriorityChange}
                       />
                     ))}
                   </div>

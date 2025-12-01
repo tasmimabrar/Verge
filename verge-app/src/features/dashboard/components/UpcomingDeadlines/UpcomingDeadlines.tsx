@@ -10,6 +10,7 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { useUpcomingTasks, useUpdateTask } from '@/shared/hooks/useTasks';
 import { useProjects } from '@/shared/hooks/useProjects';
 import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
+import type { TaskPriority } from '@/shared/components/PriorityDropdown';
 import styles from './UpcomingDeadlines.module.css';
 
 /**
@@ -50,6 +51,20 @@ export const UpcomingDeadlines: FC = () => {
     } catch (err) {
       console.error('Failed to update status:', err);
       toast.error('Failed to update task status');
+    }
+  };
+
+  const handlePriorityChange = async (taskId: string, newPriority: TaskPriority) => {
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        priority: newPriority,
+        userId: user!.uid,
+      });
+      toast.success(`Task priority changed to ${newPriority}`);
+    } catch (err) {
+      console.error('Failed to update priority:', err);
+      toast.error('Failed to update task priority');
     }
   };
 
@@ -141,6 +156,7 @@ export const UpcomingDeadlines: FC = () => {
                       projectName={getProjectName(task.projectId)}
                       onClick={() => handleTaskClick(task.id)}
                       onStatusChange={handleStatusChange}
+                      onPriorityChange={handlePriorityChange}
                     />
                   ))}
                 </div>

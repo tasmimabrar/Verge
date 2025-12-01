@@ -36,6 +36,9 @@ export type { SubtaskListProps } from './SubtaskList';
 export { TaskStatusDropdown } from './TaskStatusDropdown';
 export type { TaskStatusDropdownProps } from './TaskStatusDropdown';
 
+export { PriorityDropdown } from './PriorityDropdown';
+export type { PriorityDropdownProps, TaskPriority } from './PriorityDropdown';
+
 export { ViewToggle } from './ViewToggle';
 export type { ViewToggleProps } from './ViewToggle';
 

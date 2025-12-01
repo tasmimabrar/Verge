@@ -14,9 +14,10 @@
 import { format, isToday, isTomorrow, isPast } from 'date-fns';
 import { FiCalendar, FiFolder, FiCheckSquare } from 'react-icons/fi';
 import { toDate } from '@/shared/utils/dateHelpers';
-import { Card, Badge, TaskStatusDropdown } from '@/shared/components';
+import { Card, Badge, TaskStatusDropdown, PriorityDropdown } from '@/shared/components';
 import type { Task } from '@/shared/types';
 import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
+import type { TaskPriority } from '@/shared/components/PriorityDropdown';
 import styles from './TaskCard.module.css';
 
 export interface TaskCardProps {
@@ -34,6 +35,9 @@ export interface TaskCardProps {
   
   /** Status change handler (optional - enables status dropdown) */
   onStatusChange?: (taskId: string, newStatus: TaskStatus) => void;
+  
+  /** Priority change handler (optional - enables priority dropdown) */
+  onPriorityChange?: (taskId: string, newPriority: TaskPriority) => void;
   
   /** Additional CSS classes */
   className?: string;
@@ -88,6 +92,7 @@ export const TaskCard = ({
   projectName,
   onClick,
   onStatusChange,
+  onPriorityChange,
   className = '',
 }: TaskCardProps) => {
   // Handle both Timestamp and Date objects using helper
@@ -104,6 +109,13 @@ export const TaskCard = ({
     if (onStatusChange) {
       // Prevent click propagation when changing status
       onStatusChange(task.id, newStatus);
+    }
+  };
+
+  const handlePriorityChange = (newPriority: TaskPriority) => {
+    if (onPriorityChange) {
+      // Prevent click propagation when changing priority
+      onPriorityChange(task.id, newPriority);
     }
   };
   
@@ -127,9 +139,17 @@ export const TaskCard = ({
               )}
               <h4 className={styles.title}>{task.title}</h4>
             </div>
-            <Badge variant={getPriorityVariant(task.priority)} size="sm">
-              {task.priority}
-            </Badge>
+            {onPriorityChange ? (
+              <PriorityDropdown
+                currentPriority={task.priority as TaskPriority}
+                onPriorityChange={handlePriorityChange}
+                size="small"
+              />
+            ) : (
+              <Badge variant={getPriorityVariant(task.priority)} size="sm">
+                {task.priority}
+              </Badge>
+            )}
           </div>
           
           <div className={styles.metadata}>
@@ -170,9 +190,17 @@ export const TaskCard = ({
             )}
             <h3 className={styles.title}>{task.title}</h3>
             <div className={styles.badges}>
-              <Badge variant={getPriorityVariant(task.priority)} size="md">
-                {task.priority}
-              </Badge>
+              {onPriorityChange ? (
+                <PriorityDropdown
+                  currentPriority={task.priority as TaskPriority}
+                  onPriorityChange={handlePriorityChange}
+                  size="medium"
+                />
+              ) : (
+                <Badge variant={getPriorityVariant(task.priority)} size="md">
+                  {task.priority}
+                </Badge>
+              )}
             </div>
           </div>
         </div>

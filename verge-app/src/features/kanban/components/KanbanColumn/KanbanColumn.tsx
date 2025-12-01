@@ -3,6 +3,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableTaskCard } from '../SortableTaskCard/SortableTaskCard';
 import type { Task, TaskStatus } from '@/shared/types';
+import type { TaskPriority } from '@/shared/components/PriorityDropdown';
 import { EmptyState } from '@/shared/components';
 import { FiInbox } from 'react-icons/fi';
 import styles from './KanbanColumn.module.css';
@@ -12,6 +13,7 @@ export interface KanbanColumnProps {
   title: string;
   tasks: Task[];
   onStatusChange: (taskId: string, newStatus: TaskStatus) => void;
+  onPriorityChange: (taskId: string, newPriority: TaskPriority) => void;
 }
 
 /**
@@ -20,7 +22,7 @@ export interface KanbanColumnProps {
  * Droppable column for Kanban board.
  * Contains sortable task cards.
  */
-export const KanbanColumn: FC<KanbanColumnProps> = ({ id, title, tasks, onStatusChange }) => {
+export const KanbanColumn: FC<KanbanColumnProps> = ({ id, title, tasks, onStatusChange, onPriorityChange }) => {
   const { setNodeRef, isOver } = useDroppable({ id });
 
   const taskIds = tasks.map(t => t.id);
@@ -53,6 +55,7 @@ export const KanbanColumn: FC<KanbanColumnProps> = ({ id, title, tasks, onStatus
                 key={task.id}
                 task={task}
                 onStatusChange={onStatusChange}
+                onPriorityChange={onPriorityChange}
               />
             ))}
           </SortableContext>

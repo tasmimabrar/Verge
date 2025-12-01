@@ -62,6 +62,20 @@ export const TasksList: FC = () => {
       toast.error('Failed to update task status');
     }
   };
+
+  const handlePriorityChange = async (taskId: string, newPriority: TaskPriority) => {
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        priority: newPriority,
+        userId: user!.uid,
+      });
+      toast.success(`Task priority changed to ${newPriority}`);
+    } catch (err) {
+      console.error('Failed to update priority:', err);
+      toast.error('Failed to update task priority');
+    }
+  };
   
   /**
    * Update URL query param for filters/sorting
@@ -363,6 +377,7 @@ export const TasksList: FC = () => {
                 projectName={getProjectName(task.projectId)}
                 onClick={() => handleTaskClick(task.id)}
                 onStatusChange={handleStatusChange}
+                onPriorityChange={handlePriorityChange}
               />
             ))}
           </div>

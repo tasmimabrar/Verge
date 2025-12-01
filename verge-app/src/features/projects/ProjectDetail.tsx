@@ -12,13 +12,14 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { useProject, useUpdateProject, useDeleteProject } from '@/shared/hooks/useProjects';
 import { useProjectTasks, useCreateTask, useUpdateTask } from '@/shared/hooks/useTasks';
 import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
+import type { TaskPriority } from '@/shared/components/PriorityDropdown';
 import styles from './ProjectDetail.module.css';
 
 interface ProjectFormData {
   name: string;
   description: string;
   dueDate: string;
-  status: 'active' | 'on_hold' | 'completed' | 'archived';
+  status: 'active' | 'on hold' | 'completed' | 'archived';
 }
 
 interface QuickTaskFormData {
@@ -66,6 +67,20 @@ export const ProjectDetail: FC = () => {
     } catch (err) {
       console.error('Failed to update status:', err);
       toast.error('Failed to update task status');
+    }
+  };
+
+  const handlePriorityChange = async (taskId: string, newPriority: TaskPriority) => {
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        priority: newPriority,
+        userId: user!.uid,
+      });
+      toast.success(`Task priority changed to ${newPriority}`);
+    } catch (err) {
+      console.error('Failed to update priority:', err);
+      toast.error('Failed to update task priority');
     }
   };
 
@@ -180,7 +195,7 @@ export const ProjectDetail: FC = () => {
     switch (status) {
       case 'completed': return 'success';
       case 'active': return 'info';
-      case 'on_hold': return 'warning';
+      case 'on hold': return 'warning';
       case 'archived': return 'default';
       default: return 'default';
     }
@@ -327,7 +342,7 @@ export const ProjectDetail: FC = () => {
                     {...registerProject('status', { required: 'Status is required' })}
                   >
                     <option value="active">Active</option>
-                    <option value="on_hold">On Hold</option>
+                    <option value="on hold">On Hold</option>
                     <option value="completed">Completed</option>
                     <option value="archived">Archived</option>
                   </select>
@@ -453,6 +468,7 @@ export const ProjectDetail: FC = () => {
                   variant="preview"
                   onClick={() => handleTaskClick(task.id)}
                   onStatusChange={handleStatusChange}
+                  onPriorityChange={handlePriorityChange}
                 />
               ))}
             </div>

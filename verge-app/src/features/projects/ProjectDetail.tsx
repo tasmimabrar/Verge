@@ -13,7 +13,7 @@ import { useProject, useUpdateProject, useDeleteProject } from '@/shared/hooks/u
 import { useProjectTasks, useCreateTask, useUpdateTask } from '@/shared/hooks/useTasks';
 import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
 import type { TaskPriority } from '@/shared/components/PriorityDropdown';
-import type { ProjectStatus } from '@/shared/types';
+import type { ProjectStatus, Project } from '@/shared/types';
 import styles from './ProjectDetail.module.css';
 
 interface QuickTaskFormData {
@@ -45,6 +45,10 @@ export const ProjectDetail: FC = () => {
   const [descriptionValue, setDescriptionValue] = useState('');
   const [editingDueDate, setEditingDueDate] = useState(false);
   const [dueDateValue, setDueDateValue] = useState('');
+  
+  // Track unsaved changes
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   
   const [showQuickAdd, setShowQuickAdd] = useState(false);
 
@@ -102,119 +106,147 @@ export const ProjectDetail: FC = () => {
     }
   };
 
-  // Initialize inline editing values when project loads
-  // Note: Intentionally only depends on project?.id to avoid re-initializing during edits
+  // Initialize inline editing values when project loads - only reset on navigation (project ID change)
+  // Removed !editingField conditions to allow local changes to persist in UI
   useEffect(() => {
-    if (project && !editingName) {
+    if (project) {
       setNameValue(project.name);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project?.id]);
 
   useEffect(() => {
-    if (project && !editingDescription) {
+    if (project) {
       setDescriptionValue(project.description || '');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project?.id]);
 
   useEffect(() => {
-    if (project && !editingDueDate) {
+    if (project) {
       setDueDateValue(project.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project?.id]);
 
-  // Inline edit handlers
-  const handleNameSave = async () => {
-    if (!nameValue.trim() || nameValue === project?.name) {
-      setEditingName(false);
-      return;
-    }
-
-    if (nameValue.trim().length < 3) {
-      toast.error('Project name must be at least 3 characters');
-      setNameValue(project?.name || '');
-      setEditingName(false);
-      return;
-    }
-
-    try {
-      await updateProject.mutateAsync({
-        id: projectId!,
-        name: nameValue.trim(),
-        userId: user!.uid,
-      });
-      toast.success('Project name updated');
-      setEditingName(false);
-    } catch (err) {
-      console.error('Failed to update name:', err);
-      toast.error('Failed to update project name');
-      setNameValue(project?.name || '');
-      setEditingName(false);
-    }
-  };
-
-  const handleDescriptionSave = async () => {
-    if (descriptionValue === project?.description) {
-      setEditingDescription(false);
-      return;
-    }
-
-    try {
-      await updateProject.mutateAsync({
-        id: projectId!,
-        description: descriptionValue.trim(),
-        userId: user!.uid,
-      });
-      toast.success('Description updated');
-      setEditingDescription(false);
-    } catch (err) {
-      console.error('Failed to update description:', err);
-      toast.error('Failed to update description');
-      setDescriptionValue(project?.description || '');
-      setEditingDescription(false);
-    }
-  };
-
-  const handleDueDateSave = async () => {
-    if (!dueDateValue) {
-      toast.error('Due date is required');
-      setDueDateValue(project?.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '');
-      setEditingDueDate(false);
-      return;
-    }
-
-    const currentDateStr = project?.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '';
-    if (dueDateValue === currentDateStr) {
-      setEditingDueDate(false);
-      return;
-    }
-
-    const selectedDate = new Date(dueDateValue);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  // Detect changes and mark as unsaved
+  useEffect(() => {
+    if (!project) return;
     
-    if (selectedDate < today) {
-      toast.error('Due date cannot be in the past');
-      setDueDateValue(currentDateStr);
-      setEditingDueDate(false);
-      return;
-    }
+    const hasChanges = 
+      nameValue !== project.name ||
+      descriptionValue !== (project.description || '') ||
+      dueDateValue !== (project.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '');
+    
+    setHasUnsavedChanges(hasChanges);
+  }, [project, nameValue, descriptionValue, dueDateValue]);
+
+  // Unified save handler - batches all changes into ONE Firebase write
+  const handleSaveAllChanges = async () => {
+    if (!project || !projectId || !hasUnsavedChanges) return;
+
+    setIsSaving(true);
 
     try {
-      await updateProject.mutateAsync({
-        id: projectId!,
-        dueDate: Timestamp.fromDate(dateStringToLocalDate(dueDateValue)),
+      // Build update object with only changed fields
+      const updates: Partial<Project> & { id: string; userId: string } = {
+        id: projectId,
         userId: user!.uid,
-      });
-      toast.success('Due date updated');
-      setEditingDueDate(false);
+      };
+
+      // Name validation and update
+      if (nameValue !== project.name) {
+        if (!nameValue.trim() || nameValue.trim().length < 3) {
+          toast.error('Project name must be at least 3 characters');
+          setNameValue(project.name);
+          setIsSaving(false);
+          return;
+        }
+        updates.name = nameValue.trim();
+      }
+
+      // Description update
+      if (descriptionValue !== (project.description || '')) {
+        updates.description = descriptionValue.trim();
+      }
+
+      // Due date validation and update
+      if (dueDateValue !== (project.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '')) {
+        if (!dueDateValue) {
+          toast.error('Due date is required');
+          setDueDateValue(project.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '');
+          setIsSaving(false);
+          return;
+        }
+
+        const selectedDate = new Date(dueDateValue);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (selectedDate < today) {
+          toast.error('Due date cannot be in the past');
+          setDueDateValue(project.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '');
+          setIsSaving(false);
+          return;
+        }
+
+        updates.dueDate = Timestamp.fromDate(dateStringToLocalDate(dueDateValue));
+      }
+
+      // Only save if there are actual changes
+      if (Object.keys(updates).length > 2) { // More than just id and userId
+        await updateProject.mutateAsync(updates);
+        toast.success('Changes saved successfully!');
+        setHasUnsavedChanges(false);
+        
+        // Close all editing modes
+        setEditingName(false);
+        setEditingDescription(false);
+        setEditingDueDate(false);
+      }
     } catch (err) {
-      console.error('Failed to update due date:', err);
-      toast.error('Failed to update due date');
-      setDueDateValue(currentDateStr);
-      setEditingDueDate(false);
+      console.error('Failed to save changes:', err);
+      toast.error('Failed to save changes. Please try again.');
+      
+      // Revert all values on error
+      if (project) {
+        setNameValue(project.name);
+        setDescriptionValue(project.description || '');
+        setDueDateValue(project.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '');
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Discard changes and revert to original values
+  const handleDiscardChanges = () => {
+    if (!project) return;
+    
+    setNameValue(project.name);
+    setDescriptionValue(project.description || '');
+    setDueDateValue(project.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '');
+    
+    setEditingName(false);
+    setEditingDescription(false);
+    setEditingDueDate(false);
+    
+    setHasUnsavedChanges(false);
+    toast.info('Changes discarded');
+  };
+
+  // Field blur handler (now just closes editing mode, no saving)
+  const handleFieldBlur = (fieldName: string) => {
+    switch (fieldName) {
+      case 'name':
+        setEditingName(false);
+        break;
+      case 'description':
+        setEditingDescription(false);
+        break;
+      case 'dueDate':
+        setEditingDueDate(false);
+        break;
     }
   };
 
@@ -319,15 +351,16 @@ export const ProjectDetail: FC = () => {
                 className={`${styles.title} ${styles.titleInput}`}
                 value={nameValue}
                 onChange={(e) => setNameValue(e.target.value)}
-                onBlur={handleNameSave}
+                onBlur={() => handleFieldBlur('name')}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
-                    handleNameSave();
+                    handleFieldBlur('name');
                   }
                   if (e.key === 'Escape') {
                     setNameValue(project.name);
                     setEditingName(false);
+                    setHasUnsavedChanges(false);
                   }
                 }}
                 autoFocus
@@ -337,7 +370,7 @@ export const ProjectDetail: FC = () => {
                 className={`${styles.title} ${styles.editable}`}
                 onClick={() => setEditingName(true)}
               >
-                {project.name}
+                {nameValue}
               </h1>
             )}
             <div className={styles.metadata}>
@@ -347,22 +380,23 @@ export const ProjectDetail: FC = () => {
                   className={styles.dateInput}
                   value={dueDateValue}
                   onChange={(e) => setDueDateValue(e.target.value)}
-                  onBlur={handleDueDateSave}
+                  onBlur={() => handleFieldBlur('dueDate')}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      handleDueDateSave();
+                      handleFieldBlur('dueDate');
                     }
                     if (e.key === 'Escape') {
                       setDueDateValue(project.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '');
                       setEditingDueDate(false);
+                      setHasUnsavedChanges(false);
                     }
                   }}
                   autoFocus
                 />
               ) : (
                 <span className={`${styles.dueDate} ${styles.editable}`} onClick={() => setEditingDueDate(true)}>
-                  <FiCalendar /> Due {format(toDate(project.dueDate), 'MMM dd, yyyy')}
+                  <FiCalendar /> Due {dueDateValue ? format(new Date(dueDateValue), 'MMM dd, yyyy') : 'No date'}
                 </span>
               )}
               <ProjectStatusDropdown
@@ -397,11 +431,12 @@ export const ProjectDetail: FC = () => {
                   className={styles.descriptionInput}
                   value={descriptionValue}
                   onChange={(e) => setDescriptionValue(e.target.value)}
-                  onBlur={handleDescriptionSave}
+                  onBlur={() => handleFieldBlur('description')}
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') {
                       setDescriptionValue(project.description || '');
                       setEditingDescription(false);
+                      setHasUnsavedChanges(false);
                     }
                   }}
                   autoFocus
@@ -410,10 +445,10 @@ export const ProjectDetail: FC = () => {
                 />
               ) : (
                 <p
-                  className={`${styles.description} ${project.description ? styles.editable : styles.descriptionPlaceholder}`}
+                  className={`${styles.description} ${descriptionValue ? styles.editable : styles.descriptionPlaceholder}`}
                   onClick={() => setEditingDescription(true)}
                 >
-                  {project.description || 'Click to add description...'}
+                  {descriptionValue || 'Click to add description...'}
                 </p>
               )}
             </div>
@@ -433,6 +468,35 @@ export const ProjectDetail: FC = () => {
             </div>
           </div>
         </Card>
+
+        {/* Floating Save Changes Button */}
+        {hasUnsavedChanges && (
+          <div className={styles.saveChangesBar}>
+            <div className={styles.saveChangesContent}>
+              <span className={styles.unsavedIndicator}>
+                You have unsaved changes
+              </span>
+              <div className={styles.saveActions}>
+                <Button
+                  variant="ghost"
+                  size="small"
+                  onClick={handleDiscardChanges}
+                  disabled={isSaving}
+                >
+                  Discard
+                </Button>
+                <Button
+                  variant="primary"
+                  size="small"
+                  onClick={handleSaveAllChanges}
+                  loading={isSaving}
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tasks Section */}
         <div className={styles.tasksSection}>

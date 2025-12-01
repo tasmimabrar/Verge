@@ -12,7 +12,7 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { useTask, useUpdateTask, useDeleteTask } from '@/shared/hooks/useTasks';
 import { useProjects } from '@/shared/hooks/useProjects';
 import { getUserSettings } from '@/lib/firebase/firestore';
-import type { Subtask, UserSettings } from '@/shared/types';
+import type { Subtask, UserSettings, Task } from '@/shared/types';
 import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
 import type { TaskPriority } from '@/shared/components/PriorityDropdown';
 import styles from './TaskDetail.module.css';
@@ -46,6 +46,10 @@ export const TaskDetail: FC = () => {
   const [projectValue, setProjectValue] = useState('');
   const [editingTags, setEditingTags] = useState(false);
   const [tagsValue, setTagsValue] = useState('');
+  
+  // Track unsaved changes
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Queries
   const { data: task, isLoading, error } = useTask(taskId);
@@ -69,186 +73,185 @@ export const TaskDetail: FC = () => {
     loadSettings();
   }, [user]);
 
-  // Initialize inline edit values when task loads - suppressing ESLint warnings as this is intentional
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Initialize inline edit values when task loads - only reset on navigation (task ID change)
+  // Removed !editingField conditions to allow local changes to persist in UI
+  // Note: ESLint warnings about dependencies are intentional - we only want to reset on task ID change
   useEffect(() => {
-    if (task && !editingTitle) {
+    if (task) {
       setTitleValue(task.title);
     }
   }, [task?.id]); // Only run when task ID changes
   
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (task && !editingNotes) {
+    if (task) {
       setNotesValue(task.notes || '');
     }
   }, [task?.id]);
   
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (task && !editingDueDate) {
+    if (task) {
       setDueDateValue(task.dueDate ? format(toDate(task.dueDate), 'yyyy-MM-dd') : '');
     }
   }, [task?.id]);
   
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (task && !editingProject) {
+    if (task) {
       setProjectValue(task.projectId);
     }
   }, [task?.id]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (task && !editingTags) {
+    if (task) {
       setTagsValue(task.tags ? task.tags.join(', ') : '');
     }
   }, [task?.id]);
 
-  // Inline edit handlers
-  const handleTitleSave = async () => {
-    if (!task || !taskId || !titleValue.trim()) {
-      setTitleValue(task?.title || '');
-      setEditingTitle(false);
-      return;
-    }
+  // Detect changes and mark as unsaved
+  useEffect(() => {
+    if (!task) return;
     
-    if (titleValue === task.title) {
-      setEditingTitle(false);
-      return;
-    }
-
-    try {
-      await updateTask.mutateAsync({
-        id: taskId,
-        title: titleValue.trim(),
-        userId: user!.uid,
-      });
-      toast.success('Title updated');
-      setEditingTitle(false);
-    } catch (err) {
-      console.error('Failed to update title:', err);
-      toast.error('Failed to update title');
-      setTitleValue(task.title);
-      setEditingTitle(false);
-    }
-  };
-
-  const handleNotesSave = async () => {
-    if (!task || !taskId) {
-      setEditingNotes(false);
-      return;
-    }
+    const hasChanges = 
+      titleValue !== task.title ||
+      notesValue !== (task.notes || '') ||
+      dueDateValue !== (task.dueDate ? format(toDate(task.dueDate), 'yyyy-MM-dd') : '') ||
+      projectValue !== task.projectId ||
+      tagsValue !== (task.tags ? task.tags.join(', ') : '');
     
-    if (notesValue === (task.notes || '')) {
-      setEditingNotes(false);
-      return;
-    }
+    setHasUnsavedChanges(hasChanges);
+  }, [task, titleValue, notesValue, dueDateValue, projectValue, tagsValue]);
+
+  // Unified save handler - batches all changes into ONE Firebase write
+  const handleSaveAllChanges = async () => {
+    if (!task || !taskId || !hasUnsavedChanges) return;
+
+    setIsSaving(true);
 
     try {
-      await updateTask.mutateAsync({
+      // Build update object with only changed fields
+      const updates: Partial<Task> & { id: string; userId: string } = {
         id: taskId,
-        notes: notesValue.trim(),
         userId: user!.uid,
-      });
-      toast.success('Notes updated');
-      setEditingNotes(false);
+      };
+
+      // Title validation and update
+      if (titleValue !== task.title) {
+        if (!titleValue.trim()) {
+          toast.error('Title cannot be empty');
+          setTitleValue(task.title);
+          setIsSaving(false);
+          return;
+        }
+        updates.title = titleValue.trim();
+      }
+
+      // Notes update
+      if (notesValue !== (task.notes || '')) {
+        updates.notes = notesValue.trim();
+      }
+
+      // Due date validation and update
+      if (dueDateValue !== (task.dueDate ? format(toDate(task.dueDate), 'yyyy-MM-dd') : '')) {
+        if (!dueDateValue) {
+          toast.error('Due date is required');
+          setDueDateValue(task.dueDate ? format(toDate(task.dueDate), 'yyyy-MM-dd') : '');
+          setIsSaving(false);
+          return;
+        }
+        updates.dueDate = Timestamp.fromDate(dateStringToLocalDate(dueDateValue));
+      }
+
+      // Project update
+      if (projectValue !== task.projectId) {
+        if (!projectValue) {
+          toast.error('Project is required');
+          setProjectValue(task.projectId);
+          setIsSaving(false);
+          return;
+        }
+        updates.projectId = projectValue;
+      }
+
+      // Tags update
+      const newTags = tagsValue
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0);
+      const currentTags = task.tags || [];
+      const tagsChanged = JSON.stringify(newTags.sort()) !== JSON.stringify(currentTags.sort());
+      
+      if (tagsChanged) {
+        updates.tags = newTags;
+      }
+
+      // Only save if there are actual changes
+      if (Object.keys(updates).length > 2) { // More than just id and userId
+        await updateTask.mutateAsync(updates);
+        toast.success('Changes saved successfully!');
+        setHasUnsavedChanges(false);
+        
+        // Close all editing modes
+        setEditingTitle(false);
+        setEditingNotes(false);
+        setEditingDueDate(false);
+        setEditingProject(false);
+        setEditingTags(false);
+      }
     } catch (err) {
-      console.error('Failed to update notes:', err);
-      toast.error('Failed to update notes');
-      setNotesValue(task.notes || '');
-      setEditingNotes(false);
+      console.error('Failed to save changes:', err);
+      toast.error('Failed to save changes. Please try again.');
+      
+      // Revert all values on error
+      if (task) {
+        setTitleValue(task.title);
+        setNotesValue(task.notes || '');
+        setDueDateValue(task.dueDate ? format(toDate(task.dueDate), 'yyyy-MM-dd') : '');
+        setProjectValue(task.projectId);
+        setTagsValue(task.tags ? task.tags.join(', ') : '');
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleDueDateSave = async () => {
-    if (!task || !taskId || !dueDateValue) {
-      setEditingDueDate(false);
-      return;
-    }
-
-    const newDate = dateStringToLocalDate(dueDateValue);
-    if (newDate.getTime() === toDate(task.dueDate).getTime()) {
-      setEditingDueDate(false);
-      return;
-    }
-
-    try {
-      await updateTask.mutateAsync({
-        id: taskId,
-        dueDate: Timestamp.fromDate(newDate),
-        userId: user!.uid,
-      });
-      toast.success('Due date updated');
-      setEditingDueDate(false);
-    } catch (err) {
-      console.error('Failed to update due date:', err);
-      toast.error('Failed to update due date');
-      setDueDateValue(task.dueDate ? format(toDate(task.dueDate), 'yyyy-MM-dd') : '');
-      setEditingDueDate(false);
-    }
+  // Discard changes and revert to original values
+  const handleDiscardChanges = () => {
+    if (!task) return;
+    
+    setTitleValue(task.title);
+    setNotesValue(task.notes || '');
+    setDueDateValue(task.dueDate ? format(toDate(task.dueDate), 'yyyy-MM-dd') : '');
+    setProjectValue(task.projectId);
+    setTagsValue(task.tags ? task.tags.join(', ') : '');
+    
+    setEditingTitle(false);
+    setEditingNotes(false);
+    setEditingDueDate(false);
+    setEditingProject(false);
+    setEditingTags(false);
+    
+    setHasUnsavedChanges(false);
+    toast.info('Changes discarded');
   };
 
-  const handleProjectSave = async () => {
-    if (!task || !taskId || !projectValue) {
-      setEditingProject(false);
-      return;
-    }
-
-    if (projectValue === task.projectId) {
-      setEditingProject(false);
-      return;
-    }
-
-    try {
-      await updateTask.mutateAsync({
-        id: taskId,
-        projectId: projectValue,
-        userId: user!.uid,
-      });
-      toast.success('Project updated');
-      setEditingProject(false);
-    } catch (err) {
-      console.error('Failed to update project:', err);
-      toast.error('Failed to update project');
-      setProjectValue(task.projectId);
-      setEditingProject(false);
-    }
-  };
-
-  const handleTagsSave = async () => {
-    if (!task || !taskId) {
-      setEditingTags(false);
-      return;
-    }
-
-    // Parse tags from comma-separated string
-    const newTags = tagsValue
-      .split(',')
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0);
-
-    const currentTags = task.tags || [];
-    const tagsEqual = JSON.stringify(newTags.sort()) === JSON.stringify(currentTags.sort());
-
-    if (tagsEqual) {
-      setEditingTags(false);
-      return;
-    }
-
-    try {
-      await updateTask.mutateAsync({
-        id: taskId,
-        tags: newTags,
-        userId: user!.uid,
-      });
-      toast.success('Tags updated');
-      setEditingTags(false);
-    } catch (err) {
-      console.error('Failed to update tags:', err);
-      toast.error('Failed to update tags');
-      setTagsValue(task.tags ? task.tags.join(', ') : '');
-      setEditingTags(false);
+  // Inline edit handlers (now just close editing mode, no saving)
+  const handleFieldBlur = (fieldName: string) => {
+    // Just close the editing mode, don't save
+    switch (fieldName) {
+      case 'title':
+        setEditingTitle(false);
+        break;
+      case 'notes':
+        setEditingNotes(false);
+        break;
+      case 'dueDate':
+        setEditingDueDate(false);
+        break;
+      case 'project':
+        setEditingProject(false);
+        break;
+      case 'tags':
+        setEditingTags(false);
+        break;
     }
   };
 
@@ -531,6 +534,11 @@ export const TaskDetail: FC = () => {
     return projects?.find(p => p.id === task?.projectId);
   };
 
+  // Get the currently displayed project (uses local projectValue to show unsaved changes)
+  const getDisplayProject = () => {
+    return projects?.find(p => p.id === projectValue);
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -583,15 +591,16 @@ export const TaskDetail: FC = () => {
                   className={`${styles.title} ${styles.titleInput}`}
                   value={titleValue}
                   onChange={(e) => setTitleValue(e.target.value)}
-                  onBlur={handleTitleSave}
+                  onBlur={() => handleFieldBlur('title')}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      handleTitleSave();
+                      handleFieldBlur('title');
                     }
                     if (e.key === 'Escape') {
                       setTitleValue(task.title);
                       setEditingTitle(false);
+                      setHasUnsavedChanges(false);
                     }
                   }}
                   autoFocus
@@ -602,7 +611,7 @@ export const TaskDetail: FC = () => {
                   onClick={() => setEditingTitle(true)}
                   title="Click to edit"
                 >
-                  {task.title}
+                  {titleValue}
                 </h1>
               )}
             </div>
@@ -612,7 +621,7 @@ export const TaskDetail: FC = () => {
                   className={styles.projectSelect}
                   value={projectValue}
                   onChange={(e) => setProjectValue(e.target.value)}
-                  onBlur={handleProjectSave}
+                  onBlur={() => handleFieldBlur('project')}
                   autoFocus
                 >
                   {projects?.map((p) => (
@@ -627,7 +636,7 @@ export const TaskDetail: FC = () => {
                   onClick={() => setEditingProject(true)}
                   title="Click to change project"
                 >
-                  <FiTag /> {project.name}
+                  <FiTag /> {getDisplayProject()?.name || project.name}
                 </span>
               ) : null}
               
@@ -637,15 +646,16 @@ export const TaskDetail: FC = () => {
                   className={styles.dateInput}
                   value={dueDateValue}
                   onChange={(e) => setDueDateValue(e.target.value)}
-                  onBlur={handleDueDateSave}
+                  onBlur={() => handleFieldBlur('dueDate')}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      handleDueDateSave();
+                      handleFieldBlur('dueDate');
                     }
                     if (e.key === 'Escape') {
                       setDueDateValue(task.dueDate ? format(toDate(task.dueDate), 'yyyy-MM-dd') : '');
                       setEditingDueDate(false);
+                      setHasUnsavedChanges(false);
                     }
                   }}
                   autoFocus
@@ -656,7 +666,7 @@ export const TaskDetail: FC = () => {
                   onClick={() => setEditingDueDate(true)}
                   title="Click to change due date"
                 >
-                  <FiCalendar /> Due {format(toDate(task.dueDate), 'MMM dd, yyyy')}
+                  <FiCalendar /> Due {dueDateValue ? format(new Date(dueDateValue), 'MMM dd, yyyy') : 'No date'}
                 </span>
               )}
               
@@ -699,11 +709,12 @@ export const TaskDetail: FC = () => {
                 className={`${styles.notes} ${styles.notesInput}`}
                 value={notesValue}
                 onChange={(e) => setNotesValue(e.target.value)}
-                onBlur={handleNotesSave}
+                onBlur={() => handleFieldBlur('notes')}
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') {
                     setNotesValue(task.notes || '');
                     setEditingNotes(false);
+                    setHasUnsavedChanges(false);
                   }
                 }}
                 rows={6}
@@ -712,11 +723,11 @@ export const TaskDetail: FC = () => {
               />
             ) : (
               <p
-                className={`${styles.notes} ${task.notes ? styles.editable : styles.notesPlaceholder}`}
+                className={`${styles.notes} ${notesValue ? styles.editable : styles.notesPlaceholder}`}
                 onClick={() => setEditingNotes(true)}
                 title="Click to edit"
               >
-                {task.notes || 'Click to add notes...'}
+                {notesValue || 'Click to add notes...'}
               </p>
             )}
           </div>
@@ -741,15 +752,16 @@ export const TaskDetail: FC = () => {
                 className={styles.tagsInput}
                 value={tagsValue}
                 onChange={(e) => setTagsValue(e.target.value)}
-                onBlur={handleTagsSave}
+                onBlur={() => handleFieldBlur('tags')}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
-                    handleTagsSave();
+                    handleFieldBlur('tags');
                   }
                   if (e.key === 'Escape') {
                     setTagsValue(task.tags ? task.tags.join(', ') : '');
                     setEditingTags(false);
+                    setHasUnsavedChanges(false);
                   }
                 }}
                 autoFocus
@@ -757,13 +769,13 @@ export const TaskDetail: FC = () => {
               />
             ) : (
               <div 
-                className={`${styles.tags} ${task.tags && task.tags.length > 0 ? styles.editable : styles.tagsPlaceholder}`}
+                className={`${styles.tags} ${tagsValue && tagsValue.trim().length > 0 ? styles.editable : styles.tagsPlaceholder}`}
                 onClick={() => setEditingTags(true)}
               >
-                {task.tags && task.tags.length > 0 ? (
-                  task.tags.map((tag, index) => (
+                {tagsValue && tagsValue.trim().length > 0 ? (
+                  tagsValue.split(',').map((tag, index) => (
                     <Badge key={index} variant="default">
-                      {tag}
+                      {tag.trim()}
                     </Badge>
                   ))
                 ) : (
@@ -788,6 +800,35 @@ export const TaskDetail: FC = () => {
             </div>
           </div>
         </Card>
+
+        {/* Floating Save Changes Button */}
+        {hasUnsavedChanges && (
+          <div className={styles.saveChangesBar}>
+            <div className={styles.saveChangesContent}>
+              <span className={styles.unsavedIndicator}>
+                You have unsaved changes
+              </span>
+              <div className={styles.saveActions}>
+                <Button
+                  variant="ghost"
+                  size="small"
+                  onClick={handleDiscardChanges}
+                  disabled={isSaving}
+                >
+                  Discard
+                </Button>
+                <Button
+                  variant="primary"
+                  size="small"
+                  onClick={handleSaveAllChanges}
+                  loading={isSaving}
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Back Button */}
         <div className={styles.backButton}>

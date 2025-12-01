@@ -38,6 +38,7 @@ export const Settings: FC = () => {
   const [settings, setSettings] = useState<UserSettings>({
     theme: theme as 'light' | 'dark',
     aiEnabled: true,
+    advancedStatus: true, // New: Auto-update status based on subtasks (ON by default)
     collaborationEnabled: false,
     notifications: {
       deadlineReminders: true,
@@ -298,6 +299,24 @@ export const Settings: FC = () => {
                   className={`${styles.toggle} ${settings.aiEnabled ? styles.toggleActive : ''}`}
                   onClick={() => handleToggle('aiEnabled')}
                   aria-label="Toggle AI Assist"
+                >
+                  <span className={styles.toggleSlider} />
+                </button>
+              </div>
+
+              <div className={styles.settingItem}>
+                <div className={styles.settingInfo}>
+                  <h3 className={styles.settingLabel}>
+                    Advanced Status <span className={styles.recommended}>(Recommended)</span>
+                  </h3>
+                  <p className={styles.settingDescription}>
+                    Automatically update task status based on subtask completion. When all subtasks are done, task becomes "Done". When some are complete, task becomes "In Progress".
+                  </p>
+                </div>
+                <button
+                  className={`${styles.toggle} ${settings.advancedStatus !== false ? styles.toggleActive : ''}`}
+                  onClick={() => handleToggle('advancedStatus')}
+                  aria-label="Toggle Advanced Status"
                 >
                   <span className={styles.toggleSlider} />
                 </button>

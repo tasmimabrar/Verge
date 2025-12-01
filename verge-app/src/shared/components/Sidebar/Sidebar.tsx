@@ -4,7 +4,8 @@ import {
   FiGrid, 
   FiFolder, 
   FiCheckSquare, 
-  FiCalendar, 
+  FiCalendar,
+  FiColumns,
   FiPieChart
 } from 'react-icons/fi';
 import styles from './Sidebar.module.css';
@@ -21,6 +22,7 @@ const navItems: NavItem[] = [
   { to: '/projects', icon: FiFolder, label: 'Projects' },
   { to: '/tasks', icon: FiCheckSquare, label: 'Tasks' },
   { to: '/calendar', icon: FiCalendar, label: 'Calendar' },
+  { to: '/kanban', icon: FiColumns, label: 'Kanban' },
   { to: '/analytics', icon: FiPieChart, label: 'Analytics' },
 ];
 

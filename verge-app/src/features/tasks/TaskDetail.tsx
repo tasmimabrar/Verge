@@ -214,13 +214,57 @@ export const TaskDetail: FC = () => {
 
     const updatedSubtasks = [...(task.subtasks || []), newSubtask];
 
+    // Advanced Status Logic: Check if status should change when adding first subtask
+    let newStatus: TaskStatus | undefined;
+    const advancedStatusEnabled = userSettings?.advancedStatus !== false; // Default to true
+    
+    if (advancedStatusEnabled && updatedSubtasks.length > 0) {
+      const completedCount = updatedSubtasks.filter(st => st.completed).length;
+      const totalCount = updatedSubtasks.length;
+      
+      // When adding the first subtask to a task with no subtasks
+      if (task.subtasks?.length === 0 && task.status === 'todo') {
+        // New subtask is incomplete, so if task was "To Do", keep it there
+        // (no change needed)
+      } else if (completedCount === 0 && totalCount > 0) {
+        // All subtasks incomplete → ensure task is "To Do" (if it was done/in_progress)
+        if (task.status === 'done' || task.status === 'in_progress') {
+          newStatus = 'todo';
+        }
+      } else if (completedCount > 0 && completedCount < totalCount) {
+        // Some subtasks complete → In Progress
+        newStatus = 'in_progress';
+      } else if (completedCount === totalCount) {
+        // All subtasks complete → Done
+        newStatus = 'done';
+      }
+    }
+
     try {
-      await updateTask.mutateAsync({
+      const updateData: {
+        id: string;
+        subtasks: Subtask[];
+        userId: string;
+        status?: TaskStatus;
+      } = {
         id: taskId,
         subtasks: updatedSubtasks,
         userId: user!.uid,
-      });
-      toast.success('Subtask added!');
+      };
+      
+      // Include status update if Advanced Status changed it
+      if (newStatus && newStatus !== task.status) {
+        updateData.status = newStatus;
+      }
+      
+      await updateTask.mutateAsync(updateData);
+      
+      // Show appropriate toast message
+      if (newStatus && newStatus !== task.status) {
+        toast.success(`Subtask added! Task status changed to ${newStatus.replace('_', ' ')}`);
+      } else {
+        toast.success('Subtask added!');
+      }
     } catch (err) {
       console.error('Failed to add subtask:', err);
       toast.error('Failed to add subtask');
@@ -232,13 +276,58 @@ export const TaskDetail: FC = () => {
 
     const updatedSubtasks = task.subtasks?.filter(st => st.id !== subtaskId) || [];
 
+    // Advanced Status Logic: Update status when deleting subtasks
+    let newStatus: TaskStatus | undefined;
+    const advancedStatusEnabled = userSettings?.advancedStatus !== false; // Default to true
+    
+    if (advancedStatusEnabled) {
+      if (updatedSubtasks.length === 0) {
+        // No subtasks left - status doesn't auto-change
+        // (user can manually set it)
+      } else {
+        const completedCount = updatedSubtasks.filter(st => st.completed).length;
+        const totalCount = updatedSubtasks.length;
+        
+        if (completedCount === totalCount) {
+          // All remaining subtasks complete → Done
+          newStatus = 'done';
+        } else if (completedCount > 0) {
+          // Some subtasks complete → In Progress
+          newStatus = 'in_progress';
+        } else {
+          // No subtasks complete → To Do (only if currently done or in_progress)
+          if (task.status === 'done' || task.status === 'in_progress') {
+            newStatus = 'todo';
+          }
+        }
+      }
+    }
+
     try {
-      await updateTask.mutateAsync({
+      const updateData: {
+        id: string;
+        subtasks?: Subtask[];
+        userId: string;
+        status?: TaskStatus;
+      } = {
         id: taskId,
         subtasks: updatedSubtasks.length > 0 ? updatedSubtasks : undefined,
         userId: user!.uid,
-      });
-      toast.success('Subtask deleted');
+      };
+      
+      // Include status update if Advanced Status changed it
+      if (newStatus && newStatus !== task.status) {
+        updateData.status = newStatus;
+      }
+      
+      await updateTask.mutateAsync(updateData);
+      
+      // Show appropriate toast message
+      if (newStatus && newStatus !== task.status) {
+        toast.success(`Subtask deleted! Task status changed to ${newStatus.replace('_', ' ')}`);
+      } else {
+        toast.success('Subtask deleted');
+      }
     } catch (err) {
       console.error('Failed to delete subtask:', err);
       toast.error('Failed to delete subtask');

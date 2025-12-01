@@ -72,6 +72,9 @@ export interface UserSettings {
   /** Whether AI Assist features are enabled */
   aiEnabled: boolean;
   
+  /** Auto-update task status based on subtask completion (recommended) */
+  advancedStatus?: boolean;
+  
   /** Whether collaboration features are enabled */
   collaborationEnabled?: boolean;
   

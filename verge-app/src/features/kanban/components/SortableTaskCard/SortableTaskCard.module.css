@@ -1,0 +1,5 @@
+.sortableCard {
+  /* Card is already styled by TaskCard component */
+  /* This wrapper just handles drag behavior */
+  touch-action: none; /* Prevent scrolling while dragging on touch devices */
+}

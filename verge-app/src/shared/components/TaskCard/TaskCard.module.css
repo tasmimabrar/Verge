@@ -21,6 +21,7 @@
 /* Preview Variant (Compact for Dashboard/Lists) */
 .preview {
   /* Cursor set by clickable class */
+  position: relative;
 }
 
 .previewContent {

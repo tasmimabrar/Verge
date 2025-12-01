@@ -50,7 +50,7 @@ export const TodaysPriorities: FC = () => {
   };
 
   return (
-    <Card variant="elevated" padding="large" className={styles.container}>
+    <Card variant="elevated" padding="medium" className={styles.container}>
       {/* Header */}
       <div className={styles.header}>
         <h2 className={styles.title}>Today's Priorities</h2>

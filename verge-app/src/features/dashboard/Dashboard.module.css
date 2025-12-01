@@ -2,10 +2,22 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2xl);
+  gap: var(--spacing-lg);
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Dashboard Header */
@@ -13,27 +25,74 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.headerLeft {
+  flex: 1;
 }
 
 .title {
-  font-size: var(--font-size-3xl);
+  font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   margin: 0;
 }
 
 .subtitle {
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-  margin-top: var(--spacing-xs);
+  margin-top: 4px;
 }
 
-/* Stats Grid */
+/* Stats Grid - Back to 4 columns side-by-side */
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Staggered animation for stats cards */
+.statsGrid > * {
+  animation: fadeInUp 0.5s ease-out backwards;
+}
+
+.statsGrid > *:nth-child(1) { animation-delay: 0.1s; }
+.statsGrid > *:nth-child(2) { animation-delay: 0.2s; }
+.statsGrid > *:nth-child(3) { animation-delay: 0.3s; }
+.statsGrid > *:nth-child(4) { animation-delay: 0.4s; }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Quick Actions in top-right */
+.quickActionsWrapper {
+  animation: fadeInRight 0.6s ease-out 0.3s backwards;
+}
+
+.quickActionsWrapper > * {
+  height: 100%; /* Fill the grid cell height */
 }
 
 /* Skeleton Loading States for Stats Cards */
@@ -87,25 +146,38 @@
   background: var(--color-bg-tertiary);
 }
 
-/* Main Content - Widgets + Sidebar Layout */
+/* Main Content - Widgets Grid (3 columns) */
 .mainContent {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: var(--spacing-xl);
-  margin-top: var(--spacing-lg);
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-lg);
+  animation: fadeInUp 0.6s ease-out 0.5s backwards;
 }
 
-/* Widgets Grid - Two columns for task widgets */
+/* Make all widget cards same height - COMPACT */
+.mainContent > * {
+  height: 420px; /* Reduced from 550px for single-screen fit */
+}
+
+/* Widgets Grid - Removed, using mainContent directly */
 .widgetsGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--spacing-xl);
+  display: contents; /* Remove wrapper, use children directly in grid */
 }
 
-/* Sidebar for Quick Actions */
+/* Sidebar - Removed, Overdue tasks now in main grid */
 .sidebar {
-  display: flex;
-  flex-direction: column;
+  display: contents;
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* Content Area (deprecated - keeping for reference) */
@@ -145,18 +217,27 @@
 
 /* Responsive Design */
 @media (max-width: 1024px) {
-  .mainContent {
-    grid-template-columns: 1fr;
+  /* Stats grid becomes 2x2 on tablet */
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .widgetsGrid {
-    grid-template-columns: 1fr;
+  /* Main content becomes 2 columns */
+  .mainContent {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  /* Adjust heights for tablet */
+  .mainContent > * {
+    height: auto; /* Allow natural height on smaller screens */
+    min-height: 400px; /* But maintain minimum height */
   }
 }
 
 @media (max-width: 768px) {
+  /* Stats grid becomes single column on mobile */
   .statsGrid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: var(--spacing-md);
   }
 
@@ -168,5 +249,25 @@
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-md);
+  }
+  
+  /* Main content becomes single column */
+  .mainContent {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .container,
+  .dashboardHeader,
+  .statsGrid > *,
+  .mainContent {
+    animation: none;
+  }
+  
+  .skeletonCard {
+    animation: none;
+    opacity: 0.7;
   }
 }

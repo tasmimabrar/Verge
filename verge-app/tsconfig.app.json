@@ -30,6 +30,7 @@
       "@/*": ["src/*"],
       "@/features/*": ["src/features/*"],
       "@/shared/*": ["src/shared/*"],
+      "@/lib/*": ["src/lib/*"],
       "@/styles/*": ["src/styles/*"],
       "@/router/*": ["src/router/*"],
       "@/assets/*": ["src/assets/*"]

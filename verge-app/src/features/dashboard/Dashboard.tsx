@@ -6,7 +6,7 @@ import { useDashboardStats } from '@/shared/hooks/useDashboard';
 import { StatCard } from './components/StatCard';
 import { TodaysPriorities } from './components/TodaysPriorities';
 import { UpcomingDeadlines } from './components/UpcomingDeadlines';
-import { QuickActions } from './components/QuickActions';
+import { OverdueTasks } from './components/OverdueTasks';
 import styles from './Dashboard.module.css';
 
 export const Dashboard: FC = () => {
@@ -18,7 +18,7 @@ export const Dashboard: FC = () => {
       <div className={styles.container}>
         {/* Dashboard Header */}
         <div className={styles.dashboardHeader}>
-          <div>
+          <div className={styles.headerLeft}>
             <h1 className={styles.title}>Dashboard</h1>
             <p className={styles.subtitle}>
               Welcome back{user?.displayName ? `, ${user.displayName}` : ''}! Here's your overview.
@@ -26,7 +26,7 @@ export const Dashboard: FC = () => {
           </div>
         </div>
 
-        {/* Stats Grid */}
+        {/* Stats Grid - 4 cards side-by-side */}
         {isLoading ? (
           <div className={styles.statsGrid}>
             {[1, 2, 3, 4].map((i) => (
@@ -74,18 +74,11 @@ export const Dashboard: FC = () => {
           </div>
         ) : null}
 
-        {/* Main Content Area - Task Widgets + Quick Actions */}
+        {/* Main Content - 3 Column Task Widgets */}
         <div className={styles.mainContent}>
-          {/* Task Widgets */}
-          <div className={styles.widgetsGrid}>
-            <TodaysPriorities />
-            <UpcomingDeadlines />
-          </div>
-
-          {/* Quick Actions Sidebar */}
-          <aside className={styles.sidebar}>
-            <QuickActions />
-          </aside>
+          <TodaysPriorities />
+          <UpcomingDeadlines />
+          <OverdueTasks />
         </div>
       </div>
     </AppLayout>

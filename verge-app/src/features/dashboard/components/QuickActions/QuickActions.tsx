@@ -1,58 +1,60 @@
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiPlus, FiFolder, FiList, FiCalendar } from 'react-icons/fi';
-import { Card } from '@/shared/components';
 import styles from './QuickActions.module.css';
+
+export interface QuickActionsProps {
+  /** Callback when an action is clicked */
+  onActionClick?: () => void;
+}
 
 /**
  * QuickActions Component
  * 
- * Dashboard widget with prominent action buttons for common tasks.
+ * Dropdown menu with action buttons for common tasks.
  * Provides quick access to key app features.
- * 
- * Actions:
- * - Add Task → /tasks/new (future: modal)
- * - Create Project → /projects/new (future: modal)
- * - View All Tasks → /tasks
- * - Open Calendar → /calendar
  */
-export const QuickActions: FC = () => {
+export const QuickActions: FC<QuickActionsProps> = ({ onActionClick }) => {
   const navigate = useNavigate();
+
+  const handleAction = (path: string) => {
+    navigate(path);
+    onActionClick?.();
+  };
 
   const actions = [
     {
       id: 'add-task',
       label: 'Add Task',
       icon: <FiPlus />,
-      onClick: () => navigate('/tasks/new'),
+      onClick: () => handleAction('/tasks/new'),
       variant: 'primary' as const,
     },
     {
       id: 'create-project',
       label: 'Create Project',
       icon: <FiFolder />,
-      onClick: () => navigate('/projects/new'),
+      onClick: () => handleAction('/projects/new'),
       variant: 'secondary' as const,
     },
     {
       id: 'view-tasks',
       label: 'View All Tasks',
       icon: <FiList />,
-      onClick: () => navigate('/tasks'),
+      onClick: () => handleAction('/tasks'),
       variant: 'secondary' as const,
     },
     {
       id: 'open-calendar',
       label: 'Open Calendar',
       icon: <FiCalendar />,
-      onClick: () => navigate('/calendar'),
+      onClick: () => handleAction('/calendar'),
       variant: 'secondary' as const,
     },
   ];
 
   return (
-    <Card variant="elevated" padding="large" className={styles.container}>
-      <h2 className={styles.title}>Quick Actions</h2>
+    <div className={styles.container}>
       <div className={styles.actionsGrid}>
         {actions.map((action) => (
           <button
@@ -66,6 +68,6 @@ export const QuickActions: FC = () => {
           </button>
         ))}
       </div>
-    </Card>
+    </div>
   );
 };

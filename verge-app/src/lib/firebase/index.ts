@@ -9,3 +9,9 @@ export {
   logout,
   onAuthStateChange,
 } from './auth';
+
+// Export Firestore functions
+export {
+  getUserSettings,
+  updateUserSettings,
+} from './firestore';

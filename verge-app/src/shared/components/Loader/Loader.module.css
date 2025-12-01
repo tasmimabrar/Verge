@@ -128,3 +128,17 @@
 .skeletonItem:nth-child(3) .skeletonLine {
   animation-delay: 0.2s;
 }
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+    border-top-color: var(--color-primary);
+    border-right-color: var(--color-primary);
+  }
+  
+  .skeletonLine {
+    animation: none;
+    opacity: 0.7;
+  }
+}

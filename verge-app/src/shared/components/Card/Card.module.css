@@ -9,6 +9,9 @@
   background: var(--color-bg-primary);
   border-radius: var(--radius-md);
   transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Ensure content doesn't overflow */
 }
 
 /* Variants */

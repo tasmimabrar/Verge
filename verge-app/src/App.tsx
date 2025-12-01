@@ -7,6 +7,7 @@ import { LoginPage } from '@/features/auth';
 import { Dashboard } from '@/features/dashboard';
 import { NewTask, TaskDetail, TasksList } from '@/features/tasks';
 import { NewProject, ProjectDetail, ProjectsList } from '@/features/projects';
+import { Settings } from '@/features/settings';
 
 function App() {
   return (
@@ -87,6 +88,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ProjectDetail />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/settings" 
+                element={
+                  <ProtectedRoute>
+                    <Settings />
                   </ProtectedRoute>
                 } 
               />

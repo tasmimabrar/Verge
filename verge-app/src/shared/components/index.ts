@@ -19,6 +19,12 @@ export type { BadgeProps } from './Badge';
 export { Loader } from './Loader';
 export type { LoaderProps } from './Loader';
 
+export { Modal } from './Modal';
+export type { ModalProps } from './Modal';
+
+export { Dropdown } from './Dropdown';
+export type { DropdownProps } from './Dropdown';
+
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 

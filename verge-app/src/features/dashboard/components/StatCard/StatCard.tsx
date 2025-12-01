@@ -41,7 +41,7 @@ export const StatCard: FC<StatCardProps> = ({
   return (
     <Card
       variant="elevated"
-      padding="large"
+      padding="medium"
       onClick={onClick}
       className={styles.statCard}
     >

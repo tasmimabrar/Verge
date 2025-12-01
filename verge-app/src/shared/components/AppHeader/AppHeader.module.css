@@ -66,6 +66,122 @@
   gap: var(--spacing-md);
 }
 
+/* Quick Actions Button */
+.quickActionsWrapper {
+  position: relative;
+}
+
+.quickActionsButton {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+
+  & svg {
+    width: 20px;
+    height: 20px;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Animated streaks */
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    width: 2px;
+    height: 60%;
+    background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.4), transparent);
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%) rotate(0deg);
+    opacity: 0;
+    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  &::after {
+    transform: translateX(-50%) rotate(90deg);
+    height: 50%;
+    top: 25%;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #8b5cf6 100%);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    transform: translateY(-2px) scale(1.05);
+
+    & svg {
+      animation: spinWithEase 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    &::before,
+    &::after {
+      opacity: 1;
+      animation: spinStreaks 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+  }
+
+  /* Active state when dropdown is open */
+  &.active {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #8b5cf6 100%);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    transform: translateY(-2px) scale(1.05);
+  }
+
+  &:active {
+    transform: translateY(0) scale(1);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+@keyframes spinWithEase {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinStreaks {
+  0% {
+    transform: translateX(-50%) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .quickActionsButton {
+    &::before,
+    &::after {
+      display: none;
+    }
+
+    &:hover svg {
+      animation: none;
+      transform: scale(1.1);
+    }
+  }
+}
+
 .iconButton {
   position: relative;
   width: 40px;

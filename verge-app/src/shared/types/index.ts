@@ -72,6 +72,9 @@ export interface UserSettings {
   /** Whether AI Assist features are enabled */
   aiEnabled: boolean;
   
+  /** Whether collaboration features are enabled */
+  collaborationEnabled?: boolean;
+  
   /** Notification preferences */
   notifications: {
     deadlineReminders: boolean;

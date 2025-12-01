@@ -1,4 +1,5 @@
 import type { FC } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FiSearch, 
@@ -7,16 +8,24 @@ import {
   FiLogOut,
   FiSettings,
   FiMoon,
-  FiSun
+  FiSun,
+  FiZap
 } from 'react-icons/fi';
 import { useAuth } from '@/shared/hooks';
 import { useTheme } from '@/shared/contexts';
+import { Dropdown } from '@/shared/components';
+import { QuickActions } from '@/features/dashboard/components/QuickActions';
 import styles from './AppHeader.module.css';
 
 export const AppHeader: FC = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const [isQuickActionsOpen, setIsQuickActionsOpen] = useState(false);
+
+  const handleSettingsClick = () => {
+    navigate('/settings');
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -38,6 +47,24 @@ export const AppHeader: FC = () => {
 
         {/* Right Actions */}
         <div className={styles.actions}>
+          {/* Quick Actions */}
+          <div className={styles.quickActionsWrapper}>
+            <button 
+              className={`${styles.quickActionsButton} ${isQuickActionsOpen ? styles.active : ''}`}
+              onClick={() => setIsQuickActionsOpen(!isQuickActionsOpen)}
+              aria-label="Quick Actions"
+            >
+              <FiZap />
+            </button>
+            <Dropdown
+              isOpen={isQuickActionsOpen}
+              onClose={() => setIsQuickActionsOpen(false)}
+              align="right"
+            >
+              <QuickActions onActionClick={() => setIsQuickActionsOpen(false)} />
+            </Dropdown>
+          </div>
+
           {/* Notifications */}
           <button className={styles.iconButton}>
             <FiBell />
@@ -59,7 +86,7 @@ export const AppHeader: FC = () => {
                 {theme === 'dark' ? <FiSun /> : <FiMoon />}
                 <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
               </button>
-              <button className={styles.dropdownItem}>
+              <button className={styles.dropdownItem} onClick={handleSettingsClick}>
                 <FiSettings />
                 <span>Settings</span>
               </button>

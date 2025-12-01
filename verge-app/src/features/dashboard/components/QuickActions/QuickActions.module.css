@@ -1,24 +1,15 @@
-/* QuickActions Component Styles */
+/* QuickActions Component Styles - Dropdown Menu */
 
 .container {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
-}
-
-.title {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-  margin: 0;
-  padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--color-border);
+  padding: var(--spacing-sm);
 }
 
 .actionsGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 .actionButton {
@@ -26,18 +17,20 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-xl);
-  border: 2px solid var(--color-border);
-  border-radius: var(--border-radius-lg);
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
   background: var(--color-bg-secondary);
   cursor: pointer;
   transition: all var(--transition-normal);
-  min-height: 120px;
+  min-height: 85px;
   
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+    border-color: var(--color-primary);
+    background: var(--color-bg-tertiary);
   }
 
   &:active {
@@ -82,19 +75,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: var(--border-radius-lg);
-  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--border-radius-md);
+  font-size: 20px;
   background: var(--color-bg-tertiary);
   transition: all var(--transition-normal);
 }
 
 .label {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   text-align: center;
+  line-height: 1.2;
 }
 
 /* Responsive Design */

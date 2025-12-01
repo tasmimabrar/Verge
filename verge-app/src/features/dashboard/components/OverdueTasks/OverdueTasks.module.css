@@ -1,4 +1,4 @@
-/* TodaysPriorities Component Styles */
+/* OverdueTasks Component Styles */
 
 .container {
   display: flex;
@@ -68,7 +68,7 @@
 .taskList {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm); /* Reduced from var(--spacing-md) for compactness */
+  gap: var(--spacing-sm); /* Reduced for compactness */
   overflow-y: auto;
   padding-right: var(--spacing-xs);
   flex: 1;

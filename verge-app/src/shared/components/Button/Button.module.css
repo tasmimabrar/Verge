@@ -122,6 +122,7 @@
   position: relative;
   color: transparent;
   pointer-events: none;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   
   &::after {
     content: '';
@@ -142,5 +143,36 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+  
+  .primary:hover:not(:disabled),
+  .secondary:hover:not(:disabled) {
+    transform: none;
+  }
+  
+  .loading {
+    animation: none;
+  }
+  
+  .loading::after {
+    animation: none;
+    border: 2px solid currentColor;
+    border-radius: var(--border-radius-full);
   }
 }

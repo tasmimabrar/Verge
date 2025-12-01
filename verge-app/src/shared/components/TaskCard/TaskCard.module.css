@@ -9,6 +9,11 @@
   transition: all 0.2s ease;
 }
 
+.taskCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
 /* Preview Variant (Compact for Dashboard/Lists) */
 .preview {
   cursor: pointer;
@@ -231,5 +236,20 @@
   .details {
     flex-direction: column;
     gap: var(--spacing-sm);
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .taskCard {
+    transition: none;
+  }
+  
+  .taskCard:hover {
+    transform: none;
+  }
+  
+  .subtaskItem {
+    transition: none;
   }
 }

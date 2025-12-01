@@ -4,6 +4,7 @@
   max-width: 800px;
   margin: 0 auto;
   padding: var(--spacing-2xl) var(--spacing-lg);
+  animation: fadeIn 0.4s ease-out;
 }
 
 .header {
@@ -92,6 +93,7 @@
   font-size: var(--font-size-sm);
   color: var(--color-error);
   margin-top: var(--spacing-xs);
+  animation: slideInError 0.3s ease-out;
 }
 
 .actions {
@@ -100,6 +102,40 @@
   justify-content: flex-end;
   padding-top: var(--spacing-lg);
   border-top: 1px solid var(--color-border);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInError {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .container {
+    animation: none;
+  }
+  
+  .error {
+    animation: none;
+  }
 }
 
 /* Responsive Design */

@@ -3,19 +3,22 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md);
+  height: 100%; /* Fill parent card height */
+  overflow: hidden; /* Prevent container overflow */
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
   border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0; /* Don't shrink header */
 }
 
 .title {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   margin: 0;
@@ -57,15 +60,18 @@
 .content {
   display: flex;
   flex-direction: column;
+  flex: 1; /* Take remaining space */
+  min-height: 0; /* Allow shrinking */
+  overflow: hidden; /* Enable internal scrolling */
 }
 
 .taskList {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
-  max-height: 400px;
+  gap: var(--spacing-md);
   overflow-y: auto;
   padding-right: var(--spacing-xs);
+  flex: 1;
   
   /* Custom scrollbar for dark mode */
   &::-webkit-scrollbar {
@@ -96,7 +102,15 @@
 .taskGroupList {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs); /* Reduced for compactness */
+}
+
+/* Scale down task cards to ~65% */
+.taskGroupList :global(.card) {
+  transform: scale(0.65);
+  transform-origin: top left;
+  width: 153.85%; /* 100 / 0.65 = 153.85 to compensate for scale */
+  margin-bottom: calc(var(--spacing-md) * -0.35); /* Adjust spacing after scaling */
 }
 
 .dateLabel {

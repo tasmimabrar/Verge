@@ -5,7 +5,6 @@ import {
   FiFolder, 
   FiCheckSquare, 
   FiCalendar, 
-  FiSettings,
   FiPieChart
 } from 'react-icons/fi';
 import styles from './Sidebar.module.css';
@@ -23,7 +22,6 @@ const navItems: NavItem[] = [
   { to: '/tasks', icon: FiCheckSquare, label: 'Tasks' },
   { to: '/calendar', icon: FiCalendar, label: 'Calendar' },
   { to: '/analytics', icon: FiPieChart, label: 'Analytics' },
-  { to: '/settings', icon: FiSettings, label: 'Settings' },
 ];
 
 export const Sidebar: FC = () => {

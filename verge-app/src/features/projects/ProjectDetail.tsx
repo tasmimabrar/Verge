@@ -106,7 +106,7 @@ export const ProjectDetail: FC = () => {
       await updateProject.mutateAsync({
         id: projectId,
         name: data.name,
-        description: data.description?.trim() || undefined, // Only include if not empty
+        description: data.description?.trim() || '', // Send empty string to clear field
         dueDate: Timestamp.fromDate(dateStringToLocalDate(data.dueDate)),
         status: data.status,
         userId: user!.uid,

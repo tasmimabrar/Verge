@@ -89,9 +89,6 @@ export const NewTask: FC = () => {
     navigate(-1); // Go back
   };
 
-  // Get today's date in YYYY-MM-DD format for min date
-  const today = new Date().toISOString().split('T')[0];
-
   return (
     <AppLayout>
       <div className={styles.container}>
@@ -158,7 +155,6 @@ export const NewTask: FC = () => {
                   id="dueDate"
                   type="date"
                   className={styles.input}
-                  min={today}
                   {...register('dueDate', { required: 'Due date is required' })}
                 />
                 {errors.dueDate && (

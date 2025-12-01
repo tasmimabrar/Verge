@@ -5,9 +5,10 @@ import { useForm } from 'react-hook-form';
 import { Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { FiEdit2, FiTrash2, FiSave, FiX, FiCalendar, FiTag, FiAlertCircle } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiSave, FiX, FiCalendar, FiTag, FiAlertCircle, FiStar } from 'react-icons/fi';
 import { toDate, dateStringToLocalDate } from '@/shared/utils/dateHelpers';
 import { AppLayout, Card, Button, Loader, EmptyState, Badge, SubtaskList, TaskStatusDropdown } from '@/shared/components';
+import { AIAssistPanel } from './components/AIAssistPanel';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useTask, useUpdateTask, useDeleteTask } from '@/shared/hooks/useTasks';
 import { useProjects } from '@/shared/hooks/useProjects';
@@ -43,6 +44,7 @@ export const TaskDetail: FC = () => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
+  const [isAIAssistOpen, setIsAIAssistOpen] = useState(false);
 
   // Queries
   const { data: task, isLoading, error } = useTask(taskId);
@@ -105,11 +107,11 @@ export const TaskDetail: FC = () => {
       await updateTask.mutateAsync({
         id: taskId,
         title: data.title,
-        notes: data.notes?.trim() || undefined, // Only include if not empty
+        notes: data.notes?.trim() || '', // Send empty string to clear field
         dueDate: Timestamp.fromDate(dateStringToLocalDate(data.dueDate)),
         priority: data.priority,
         projectId: data.projectId,
-        tags: tags.length > 0 ? tags : undefined, // Only include if has tags
+        tags: tags.length > 0 ? tags : [], // Send empty array to clear tags
         status: data.status,
         userId: user!.uid,
       });
@@ -166,10 +168,13 @@ export const TaskDetail: FC = () => {
         // Some subtasks complete → In Progress
         newStatus = 'in_progress';
       } else {
-        // No subtasks complete → To Do (only if currently done or in_progress)
-        if (task.status === 'done' || task.status === 'in_progress') {
+        // No subtasks complete
+        // ONLY revert to "To Do" if task is currently "Done"
+        // If task is "In Progress", keep it there (user might have unchecked a subtask)
+        if (task.status === 'done') {
           newStatus = 'todo';
         }
+        // If status is already 'in_progress' or 'todo', don't change it
       }
     }
 
@@ -227,8 +232,10 @@ export const TaskDetail: FC = () => {
         // New subtask is incomplete, so if task was "To Do", keep it there
         // (no change needed)
       } else if (completedCount === 0 && totalCount > 0) {
-        // All subtasks incomplete → ensure task is "To Do" (if it was done/in_progress)
-        if (task.status === 'done' || task.status === 'in_progress') {
+        // All subtasks incomplete
+        // ONLY revert to "To Do" if task is currently "Done"
+        // If task is "In Progress", keep it there
+        if (task.status === 'done') {
           newStatus = 'todo';
         }
       } else if (completedCount > 0 && completedCount < totalCount) {
@@ -295,8 +302,10 @@ export const TaskDetail: FC = () => {
           // Some subtasks complete → In Progress
           newStatus = 'in_progress';
         } else {
-          // No subtasks complete → To Do (only if currently done or in_progress)
-          if (task.status === 'done' || task.status === 'in_progress') {
+          // No subtasks complete
+          // ONLY revert to "To Do" if task is currently "Done"
+          // If task is "In Progress", keep it there
+          if (task.status === 'done') {
             newStatus = 'todo';
           }
         }
@@ -306,12 +315,12 @@ export const TaskDetail: FC = () => {
     try {
       const updateData: {
         id: string;
-        subtasks?: Subtask[];
+        subtasks: Subtask[];
         userId: string;
         status?: TaskStatus;
       } = {
         id: taskId,
-        subtasks: updatedSubtasks.length > 0 ? updatedSubtasks : undefined,
+        subtasks: updatedSubtasks, // Always send array (empty or not)
         userId: user!.uid,
       };
       
@@ -350,15 +359,44 @@ export const TaskDetail: FC = () => {
     }
   };
 
+  // AI Assist handler - accepts suggested subtasks
+  const handleAcceptAISuggestions = async (subtaskTitles: string[]) => {
+    if (!task || !taskId) return;
+
+    // Create new subtasks from AI suggestions
+    const newSubtasks: Subtask[] = subtaskTitles.map((title, index) => ({
+      id: `subtask_${Date.now()}_${index}`,
+      title,
+      completed: false,
+      order: (task.subtasks?.length || 0) + index,
+    }));
+
+    const updatedSubtasks = [...(task.subtasks || []), ...newSubtasks];
+
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        subtasks: updatedSubtasks,
+        userId: user!.uid,
+      });
+      
+      toast.success(`Added ${newSubtasks.length} subtask${newSubtasks.length > 1 ? 's' : ''} from AI suggestions!`);
+    } catch (err) {
+      console.error('Failed to add AI subtasks:', err);
+      toast.error('Failed to add subtasks');
+      throw err; // Re-throw so AI panel knows it failed
+    }
+  };
+
   const getProject = () => {
     return projects?.find(p => p.id === task?.projectId);
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority: string): 'priority-high' | 'priority-medium' | 'priority-low' | 'default' => {
     switch (priority) {
-      case 'high': return 'error';
-      case 'medium': return 'warning';
-      case 'low': return 'success';
+      case 'high': return 'priority-high';
+      case 'medium': return 'priority-medium';
+      case 'low': return 'priority-low';
       default: return 'default';
     }
   };
@@ -428,6 +466,16 @@ export const TaskDetail: FC = () => {
           
           {!isEditing && (
             <div className={styles.headerActions}>
+              {/* AI Assist Button - only show if AI enabled in settings */}
+              {userSettings?.aiEnabled !== false && (
+                <Button
+                  variant="primary"
+                  size="small"
+                  onClick={() => setIsAIAssistOpen(true)}
+                >
+                  <FiStar /> AI Assist
+                </Button>
+              )}
               <Button
                 variant="secondary"
                 size="small"
@@ -647,6 +695,14 @@ export const TaskDetail: FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* AI Assist Panel */}
+      <AIAssistPanel
+        isOpen={isAIAssistOpen}
+        onClose={() => setIsAIAssistOpen(false)}
+        task={task}
+        onAcceptSuggestions={handleAcceptAISuggestions}
+      />
     </AppLayout>
   );
 };

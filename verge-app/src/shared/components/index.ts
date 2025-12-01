@@ -34,6 +34,9 @@ export type { SubtaskListProps } from './SubtaskList';
 export { TaskStatusDropdown } from './TaskStatusDropdown';
 export type { TaskStatusDropdownProps } from './TaskStatusDropdown';
 
+export { ViewToggle } from './ViewToggle';
+export type { ViewToggleProps } from './ViewToggle';
+
 // Domain-specific components
 export { TaskCard } from './TaskCard';
 export type { TaskCardProps } from './TaskCard';

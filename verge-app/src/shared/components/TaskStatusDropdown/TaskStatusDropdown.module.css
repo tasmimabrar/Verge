@@ -58,6 +58,30 @@
   color: var(--color-success);
 }
 
+.trigger.inProgress {
+  color: #eab308; /* Yellow for in progress */
+}
+
+.trigger.inProgress:hover {
+  color: #eab308;
+}
+
+.trigger.postponed {
+  color: #f97316; /* Orange-red for postponed */
+}
+
+.trigger.postponed:hover {
+  color: #f97316;
+}
+
+.trigger.todo {
+  color: var(--color-text-tertiary); /* Gray for to do */
+}
+
+.trigger.todo:hover {
+  color: var(--color-primary);
+}
+
 .triggerIcon {
   font-size: 20px;
 }
@@ -131,19 +155,10 @@
 
 .optionIcon {
   font-size: 18px;
-  color: var(--color-text-secondary);
   flex-shrink: 0;
 }
 
-.optionButton:hover .optionIcon {
-  color: var(--color-primary);
-}
-
-.optionButton.selected .optionIcon {
-  color: var(--color-primary);
-}
-
-/* Special colors for each status */
+/* Special colors for each status - always visible */
 .optionButton:nth-child(1) .optionIcon {
   /* To Do - default gray */
   color: var(--color-text-tertiary);
@@ -154,12 +169,12 @@
 }
 
 .optionButton:nth-child(2) .optionIcon {
-  /* In Progress - blue */
-  color: #3b82f6;
+  /* In Progress - yellow */
+  color: #eab308;
 }
 
 .optionButton:nth-child(2):hover {
-  background: rgba(59, 130, 246, 0.1); /* Light blue */
+  background: rgba(234, 179, 8, 0.1); /* Light yellow */
 }
 
 .optionButton:nth-child(3) .optionIcon {
@@ -172,12 +187,12 @@
 }
 
 .optionButton:nth-child(4) .optionIcon {
-  /* Postponed - orange */
-  color: var(--color-warning);
+  /* Postponed - orange-red */
+  color: #f97316;
 }
 
 .optionButton:nth-child(4):hover {
-  background: rgba(251, 146, 60, 0.1); /* Light orange */
+  background: rgba(249, 115, 22, 0.1); /* Light orange */
 }
 
 .optionContent {

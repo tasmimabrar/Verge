@@ -177,7 +177,7 @@ export const ProjectsList: FC = () => {
             >
               <option value="all">All</option>
               <option value="active">Active</option>
-              <option value="on_hold">On Hold</option>
+              <option value="on hold">On Hold</option>
               <option value="completed">Completed</option>
             </select>
           </div>

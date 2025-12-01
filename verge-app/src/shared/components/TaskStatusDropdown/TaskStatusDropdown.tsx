@@ -134,6 +134,22 @@ export const TaskStatusDropdown: FC<TaskStatusDropdownProps> = ({
     setIsOpen(false);
   };
 
+  // Get status-specific CSS class for trigger button
+  const getStatusClass = () => {
+    switch (currentStatus) {
+      case 'done':
+        return styles.done;
+      case 'in_progress':
+        return styles.inProgress;
+      case 'postponed':
+        return styles.postponed;
+      case 'todo':
+        return styles.todo;
+      default:
+        return '';
+    }
+  };
+
   return (
     <div 
       className={`${styles.container} ${styles[size]}`} 
@@ -144,7 +160,7 @@ export const TaskStatusDropdown: FC<TaskStatusDropdownProps> = ({
       <button
         ref={triggerRef}
         type="button"
-        className={`${styles.trigger} ${isOpen ? styles.active : ''} ${currentStatus === 'done' ? styles.done : ''}`}
+        className={`${styles.trigger} ${isOpen ? styles.active : ''} ${getStatusClass()}`}
         onClick={handleToggleDropdown}
         disabled={disabled}
         aria-label="Change task status"

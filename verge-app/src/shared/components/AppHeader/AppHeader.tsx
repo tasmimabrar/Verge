@@ -13,7 +13,7 @@ import {
 } from 'react-icons/fi';
 import { useAuth } from '@/shared/hooks';
 import { useTheme } from '@/shared/contexts';
-import { Dropdown } from '@/shared/components';
+import { Dropdown, ViewToggle } from '@/shared/components';
 import { QuickActions } from '@/features/dashboard/components/QuickActions';
 import styles from './AppHeader.module.css';
 
@@ -44,6 +44,9 @@ export const AppHeader: FC = () => {
             className={styles.searchInput}
           />
         </div>
+
+        {/* View Toggle */}
+        <ViewToggle />
 
         {/* Right Actions */}
         <div className={styles.actions}>

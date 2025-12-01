@@ -41,9 +41,10 @@ export interface ProjectCardProps {
 /**
  * Get status badge variant from project status
  */
-const getStatusVariant = (status: string): 'success' | 'info' | 'default' => {
+const getStatusVariant = (status: string): 'success' | 'info' | 'warning' | 'default' => {
   if (status === 'completed') return 'success';
   if (status === 'active') return 'info';
+  if (status === 'on_hold') return 'warning';
   return 'default';
 };
 

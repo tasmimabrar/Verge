@@ -3,10 +3,8 @@ import { NavLink } from 'react-router-dom';
 import { 
   FiGrid, 
   FiFolder, 
-  FiCheckSquare, 
-  FiCalendar,
-  FiColumns,
-  FiPieChart
+  FiPieChart,
+  FiSettings
 } from 'react-icons/fi';
 import styles from './Sidebar.module.css';
 import vergeLogoImg from '@/assets/verge_logo.png';
@@ -20,10 +18,8 @@ interface NavItem {
 const navItems: NavItem[] = [
   { to: '/dashboard', icon: FiGrid, label: 'Dashboard' },
   { to: '/projects', icon: FiFolder, label: 'Projects' },
-  { to: '/tasks', icon: FiCheckSquare, label: 'Tasks' },
-  { to: '/calendar', icon: FiCalendar, label: 'Calendar' },
-  { to: '/kanban', icon: FiColumns, label: 'Kanban' },
   { to: '/analytics', icon: FiPieChart, label: 'Analytics' },
+  { to: '/settings', icon: FiSettings, label: 'Settings' },
 ];
 
 export const Sidebar: FC = () => {

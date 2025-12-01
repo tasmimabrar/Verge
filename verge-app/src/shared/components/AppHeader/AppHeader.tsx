@@ -13,7 +13,7 @@ import {
 } from 'react-icons/fi';
 import { useAuth } from '@/shared/hooks';
 import { useTheme } from '@/shared/contexts';
-import { Dropdown, ViewToggle } from '@/shared/components';
+import { Dropdown, ViewToggle, SearchModal } from '@/shared/components';
 import { QuickActions } from '@/features/dashboard/components/QuickActions';
 import styles from './AppHeader.module.css';
 
@@ -22,6 +22,7 @@ export const AppHeader: FC = () => {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [isQuickActionsOpen, setIsQuickActionsOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const handleSettingsClick = () => {
     navigate('/settings');
@@ -36,14 +37,18 @@ export const AppHeader: FC = () => {
     <header className={styles.appHeader}>
       <div className={styles.container}>
         {/* Search Bar */}
-        <div className={styles.searchSection}>
+        <div className={styles.searchSection} onClick={() => setIsSearchOpen(true)}>
           <FiSearch className={styles.searchIcon} />
           <input 
             type="text" 
             placeholder="Search tasks, projects..." 
             className={styles.searchInput}
+            readOnly
           />
         </div>
+
+        {/* Search Modal */}
+        <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
         {/* View Toggle */}
         <ViewToggle />

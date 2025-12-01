@@ -22,6 +22,8 @@ export type { LoaderProps } from './Loader';
 export { Modal } from './Modal';
 export type { ModalProps } from './Modal';
 
+export { SearchModal } from './SearchModal';
+
 export { Dropdown } from './Dropdown';
 export type { DropdownProps } from './Dropdown';
 

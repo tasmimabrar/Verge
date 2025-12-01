@@ -25,6 +25,12 @@
   flex: 1;
   max-width: 500px;
   position: relative;
+  cursor: pointer;
+}
+
+.searchSection:hover .searchInput {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
 }
 
 .searchIcon {
@@ -34,6 +40,7 @@
   transform: translateY(-50%);
   color: var(--color-text-tertiary);
   font-size: 18px;
+  pointer-events: none;
 }
 
 .searchInput {
@@ -46,6 +53,7 @@
   color: var(--color-text-primary);
   font-size: var(--font-size-base);
   transition: all var(--transition-base);
+  cursor: pointer;
   
   &::placeholder {
     color: var(--color-text-tertiary);

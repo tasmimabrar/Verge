@@ -23,6 +23,7 @@
     "react-hook-form": "^7.67.0",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.9.6",
+    "recharts": "^3.5.1",
     "sonner": "^2.0.7"
   },
   "devDependencies": {

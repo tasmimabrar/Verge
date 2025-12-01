@@ -2,7 +2,7 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md); /* Reduced from lg for tighter spacing */
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
@@ -25,7 +25,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm); /* Reduced from md for tighter spacing */
   animation: slideDown 0.5s ease-out;
 }
 
@@ -61,8 +61,8 @@
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
+  gap: var(--spacing-sm); /* Reduced from md for tighter spacing */
+  margin-bottom: var(--spacing-md); /* Reduced from lg for tighter spacing */
 }
 
 /* Staggered animation for stats cards */
@@ -150,13 +150,13 @@
 .mainContent {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--spacing-lg);
+  gap: var(--spacing-sm); /* Reduced from lg for tighter spacing */
   animation: fadeInUp 0.6s ease-out 0.5s backwards;
 }
 
 /* Make all widget cards same height - COMPACT */
 .mainContent > * {
-  height: 420px; /* Reduced from 550px for single-screen fit */
+  height: 380px; /* Reduced from 420px for better single-screen fit */
 }
 
 /* Widgets Grid - Removed, using mainContent directly */

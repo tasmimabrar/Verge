@@ -7,10 +7,13 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { FiEdit2, FiTrash2, FiSave, FiX, FiCalendar, FiTag, FiAlertCircle } from 'react-icons/fi';
 import { toDate, dateStringToLocalDate } from '@/shared/utils/dateHelpers';
-import { AppLayout, Card, Button, Loader, EmptyState, Badge } from '@/shared/components';
+import { AppLayout, Card, Button, Loader, EmptyState, Badge, SubtaskList, TaskStatusDropdown } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useTask, useUpdateTask, useDeleteTask } from '@/shared/hooks/useTasks';
 import { useProjects } from '@/shared/hooks/useProjects';
+import { getUserSettings } from '@/lib/firebase/firestore';
+import type { Subtask, UserSettings } from '@/shared/types';
+import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
 import styles from './TaskDetail.module.css';
 
 interface TaskFormData {
@@ -39,6 +42,7 @@ export const TaskDetail: FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
 
   // Queries
   const { data: task, isLoading, error } = useTask(taskId);
@@ -47,6 +51,20 @@ export const TaskDetail: FC = () => {
   // Mutations
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+
+  // Load user settings for advanced status feature
+  useEffect(() => {
+    const loadSettings = async () => {
+      if (!user) return;
+      try {
+        const settings = await getUserSettings(user.uid);
+        setUserSettings(settings);
+      } catch (err) {
+        console.error('Failed to load user settings:', err);
+      }
+    };
+    loadSettings();
+  }, [user]);
 
   // Form
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<TaskFormData>({
@@ -125,6 +143,124 @@ export const TaskDetail: FC = () => {
     reset();
   };
 
+  // Subtask handlers
+  const handleToggleSubtask = async (subtaskId: string) => {
+    if (!task || !taskId) return;
+
+    const updatedSubtasks = task.subtasks?.map(st =>
+      st.id === subtaskId ? { ...st, completed: !st.completed } : st
+    ) || [];
+
+    // Advanced Status Logic: Auto-update task status based on subtask completion
+    let newStatus: TaskStatus | undefined;
+    const advancedStatusEnabled = userSettings?.advancedStatus !== false; // Default to true
+    
+    if (advancedStatusEnabled && updatedSubtasks.length > 0) {
+      const completedCount = updatedSubtasks.filter(st => st.completed).length;
+      const totalCount = updatedSubtasks.length;
+      
+      if (completedCount === totalCount) {
+        // All subtasks complete → Done
+        newStatus = 'done';
+      } else if (completedCount > 0) {
+        // Some subtasks complete → In Progress
+        newStatus = 'in_progress';
+      } else {
+        // No subtasks complete → To Do (only if currently done or in_progress)
+        if (task.status === 'done' || task.status === 'in_progress') {
+          newStatus = 'todo';
+        }
+      }
+    }
+
+    try {
+      const updateData: {
+        id: string;
+        subtasks: Subtask[];
+        userId: string;
+        status?: TaskStatus;
+      } = {
+        id: taskId,
+        subtasks: updatedSubtasks,
+        userId: user!.uid,
+      };
+      
+      // Include status update if Advanced Status changed it
+      if (newStatus && newStatus !== task.status) {
+        updateData.status = newStatus;
+      }
+      
+      await updateTask.mutateAsync(updateData);
+      
+      // Show appropriate toast message
+      if (newStatus && newStatus !== task.status) {
+        toast.success(`Subtask updated! Task status changed to ${newStatus.replace('_', ' ')}`);
+      }
+    } catch (err) {
+      console.error('Failed to toggle subtask:', err);
+      toast.error('Failed to update subtask');
+    }
+  };
+
+  const handleAddSubtask = async (title: string) => {
+    if (!task || !taskId) return;
+
+    const newSubtask: Subtask = {
+      id: `subtask_${Date.now()}`,
+      title,
+      completed: false,
+      order: task.subtasks?.length || 0,
+    };
+
+    const updatedSubtasks = [...(task.subtasks || []), newSubtask];
+
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        subtasks: updatedSubtasks,
+        userId: user!.uid,
+      });
+      toast.success('Subtask added!');
+    } catch (err) {
+      console.error('Failed to add subtask:', err);
+      toast.error('Failed to add subtask');
+    }
+  };
+
+  const handleDeleteSubtask = async (subtaskId: string) => {
+    if (!task || !taskId) return;
+
+    const updatedSubtasks = task.subtasks?.filter(st => st.id !== subtaskId) || [];
+
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        subtasks: updatedSubtasks.length > 0 ? updatedSubtasks : undefined,
+        userId: user!.uid,
+      });
+      toast.success('Subtask deleted');
+    } catch (err) {
+      console.error('Failed to delete subtask:', err);
+      toast.error('Failed to delete subtask');
+    }
+  };
+
+  const handleStatusChange = async (newStatus: TaskStatus) => {
+    if (!task || !taskId) return;
+
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        status: newStatus,
+        userId: user!.uid,
+      });
+      toast.success(`Task status changed to ${newStatus.replace('_', ' ')}`);
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      toast.error('Failed to update task status');
+    }
+  };
+
   const getProject = () => {
     return projects?.find(p => p.id === task?.projectId);
   };
@@ -134,15 +270,6 @@ export const TaskDetail: FC = () => {
       case 'high': return 'error';
       case 'medium': return 'warning';
       case 'low': return 'success';
-      default: return 'default';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'done': return 'success';
-      case 'in_progress': return 'info';
-      case 'postponed': return 'warning';
       default: return 'default';
     }
   };
@@ -186,7 +313,15 @@ export const TaskDetail: FC = () => {
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.headerContent}>
-            <h1 className={styles.title}>{isEditing ? 'Edit Task' : task.title}</h1>
+            <div className={styles.titleRow}>
+              <TaskStatusDropdown
+                currentStatus={task.status}
+                onStatusChange={handleStatusChange}
+                disabled={updateTask.isPending}
+                size="large"
+              />
+              <h1 className={styles.title}>{isEditing ? 'Edit Task' : task.title}</h1>
+            </div>
             <div className={styles.metadata}>
               {project && (
                 <span className={styles.project}>
@@ -198,9 +333,6 @@ export const TaskDetail: FC = () => {
               </span>
               <Badge variant={getPriorityColor(task.priority)}>
                 {task.priority}
-              </Badge>
-              <Badge variant={getStatusColor(task.status)}>
-                {task.status.replace('_', ' ')}
               </Badge>
             </div>
           </div>
@@ -375,6 +507,17 @@ export const TaskDetail: FC = () => {
                   <p className={styles.notes}>{task.notes}</p>
                 </div>
               )}
+
+              {/* Subtasks */}
+              <div className={styles.section}>
+                <SubtaskList
+                  subtasks={task.subtasks || []}
+                  onToggle={handleToggleSubtask}
+                  onAdd={handleAddSubtask}
+                  onDelete={handleDeleteSubtask}
+                  disabled={updateTask.isPending}
+                />
+              </div>
 
               {/* Tags */}
               {task.tags && task.tags.length > 0 && (

@@ -5,6 +5,8 @@ import { ProtectedRoute, PublicRoute } from '@/router';
 import { LandingPage } from '@/features/landing';
 import { LoginPage } from '@/features/auth';
 import { Dashboard } from '@/features/dashboard';
+import { Calendar } from '@/features/calendar';
+import { Kanban } from '@/features/kanban';
 import { NewTask, TaskDetail, TasksList } from '@/features/tasks';
 import { NewProject, ProjectDetail, ProjectsList } from '@/features/projects';
 import { Settings } from '@/features/settings';
@@ -40,6 +42,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/calendar" 
+                element={
+                  <ProtectedRoute>
+                    <Calendar />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/kanban" 
+                element={
+                  <ProtectedRoute>
+                    <Kanban />
                   </ProtectedRoute>
                 } 
               />

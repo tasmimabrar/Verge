@@ -9,6 +9,7 @@ import type { Timestamp } from 'firebase/firestore';
 /**
  * Safely convert a Timestamp or Date to a Date object
  * Handles both Firestore Timestamps and native Date objects
+ * Also handles serialized Timestamps from React Query cache
  */
 export const toDate = (value: Timestamp | Date | undefined | null): Date => {
   // Handle null/undefined - return current date as fallback
@@ -24,6 +25,14 @@ export const toDate = (value: Timestamp | Date | undefined | null): Date => {
   // Firestore Timestamp - check if it has toDate method
   if (typeof value === 'object' && 'toDate' in value && typeof value.toDate === 'function') {
     return value.toDate();
+  }
+  
+  // Handle serialized Timestamp from React Query cache
+  // When cached, Timestamps become plain objects with { seconds, nanoseconds }
+  if (typeof value === 'object' && 'seconds' in value && typeof value.seconds === 'number') {
+    const timestamp = value as { seconds: number; nanoseconds: number };
+    // Convert seconds to milliseconds and add nanoseconds
+    return new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000);
   }
   
   // Fallback - try to parse as date string or return current date

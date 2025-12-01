@@ -221,6 +221,16 @@
   margin: 0 0 var(--spacing-xs) 0;
 }
 
+.recommended {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-success);
+  background: rgba(34, 197, 94, 0.1);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  margin-left: var(--spacing-xs);
+}
+
 .settingDescription {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);

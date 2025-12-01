@@ -7,7 +7,7 @@ import { format, subDays, subWeeks, subMonths } from 'date-fns';
 import { toast } from 'sonner';
 import { FiEdit2, FiTrash2, FiSave, FiX, FiCalendar, FiTag, FiAlertCircle, FiStar } from 'react-icons/fi';
 import { toDate, dateStringToLocalDate } from '@/shared/utils/dateHelpers';
-import { AppLayout, Card, Button, Loader, EmptyState, Badge, SubtaskList, TaskStatusDropdown } from '@/shared/components';
+import { AppLayout, Card, Button, Loader, EmptyState, Badge, SubtaskList, TaskStatusDropdown, PriorityDropdown } from '@/shared/components';
 import { AIAssistPanel } from './components/AIAssistPanel';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useTask, useUpdateTask, useDeleteTask } from '@/shared/hooks/useTasks';
@@ -15,6 +15,7 @@ import { useProjects } from '@/shared/hooks/useProjects';
 import { getUserSettings } from '@/lib/firebase/firestore';
 import type { Subtask, UserSettings, TaskReminder } from '@/shared/types';
 import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
+import type { TaskPriority } from '@/shared/components/PriorityDropdown';
 import styles from './TaskDetail.module.css';
 
 interface TaskFormData {
@@ -398,6 +399,22 @@ export const TaskDetail: FC = () => {
     }
   };
 
+  const handlePriorityChange = async (newPriority: TaskPriority) => {
+    if (!task || !taskId) return;
+
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        priority: newPriority,
+        userId: user!.uid,
+      });
+      toast.success(`Task priority changed to ${newPriority}`);
+    } catch (err) {
+      console.error('Failed to update priority:', err);
+      toast.error('Failed to update task priority');
+    }
+  };
+
   // AI Assist handler - accepts suggested subtasks
   const handleAcceptAISuggestions = async (subtaskTitles: string[]) => {
     if (!task || !taskId) return;
@@ -429,15 +446,6 @@ export const TaskDetail: FC = () => {
 
   const getProject = () => {
     return projects?.find(p => p.id === task?.projectId);
-  };
-
-  const getPriorityColor = (priority: string): 'priority-high' | 'priority-medium' | 'priority-low' | 'default' => {
-    switch (priority) {
-      case 'high': return 'priority-high';
-      case 'medium': return 'priority-medium';
-      case 'low': return 'priority-low';
-      default: return 'default';
-    }
   };
 
   // Loading state
@@ -497,9 +505,11 @@ export const TaskDetail: FC = () => {
               <span className={styles.dueDate}>
                 <FiCalendar /> Due {format(toDate(task.dueDate), 'MMM dd, yyyy')}
               </span>
-              <Badge variant={getPriorityColor(task.priority)}>
-                {task.priority}
-              </Badge>
+              <PriorityDropdown
+                currentPriority={task.priority}
+                onPriorityChange={handlePriorityChange}
+                size="medium"
+              />
             </div>
           </div>
           

@@ -7,12 +7,13 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { FiEdit2, FiTrash2, FiSave, FiX, FiCalendar, FiPlus, FiAlertCircle } from 'react-icons/fi';
 import { toDate, dateStringToLocalDate } from '@/shared/utils/dateHelpers';
-import { AppLayout, Card, Button, Loader, EmptyState, Badge, TaskCard } from '@/shared/components';
+import { AppLayout, Card, Button, Loader, EmptyState, TaskCard, ProjectStatusDropdown } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useProject, useUpdateProject, useDeleteProject } from '@/shared/hooks/useProjects';
 import { useProjectTasks, useCreateTask, useUpdateTask } from '@/shared/hooks/useTasks';
 import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
 import type { TaskPriority } from '@/shared/components/PriorityDropdown';
+import type { ProjectStatus } from '@/shared/types';
 import styles from './ProjectDetail.module.css';
 
 interface ProjectFormData {
@@ -81,6 +82,22 @@ export const ProjectDetail: FC = () => {
     } catch (err) {
       console.error('Failed to update priority:', err);
       toast.error('Failed to update task priority');
+    }
+  };
+
+  const handleProjectStatusChange = async (newStatus: ProjectStatus) => {
+    if (!projectId) return;
+
+    try {
+      await updateProject.mutateAsync({
+        id: projectId,
+        status: newStatus,
+        userId: user!.uid,
+      });
+      toast.success(`Project status changed to ${newStatus}`);
+    } catch (err) {
+      console.error('Failed to update project status:', err);
+      toast.error('Failed to update project status');
     }
   };
 
@@ -188,17 +205,7 @@ export const ProjectDetail: FC = () => {
   };
 
   const handleTaskClick = (taskId: string) => {
-    navigate(`/tasks/${taskId}`);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'success';
-      case 'active': return 'info';
-      case 'on hold': return 'warning';
-      case 'archived': return 'default';
-      default: return 'default';
-    }
+    navigate('/projects');
   };
 
   // Loading state
@@ -243,9 +250,11 @@ export const ProjectDetail: FC = () => {
               <span className={styles.dueDate}>
                 <FiCalendar /> Due {format(toDate(project.dueDate), 'MMM dd, yyyy')}
               </span>
-              <Badge variant={getStatusColor(project.status)}>
-                {project.status.replace('_', ' ')}
-              </Badge>
+              <ProjectStatusDropdown
+                currentStatus={project.status}
+                onStatusChange={handleProjectStatusChange}
+                size="medium"
+              />
               <span className={styles.taskCount}>
                 {tasks?.length || 0} {tasks?.length === 1 ? 'task' : 'tasks'}
               </span>

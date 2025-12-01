@@ -39,6 +39,9 @@ export type { TaskStatusDropdownProps } from './TaskStatusDropdown';
 export { PriorityDropdown } from './PriorityDropdown';
 export type { PriorityDropdownProps, TaskPriority } from './PriorityDropdown';
 
+export { ProjectStatusDropdown } from './ProjectStatusDropdown';
+export type { ProjectStatusDropdownProps } from './ProjectStatusDropdown';
+
 export { ViewToggle } from './ViewToggle';
 export type { ViewToggleProps } from './ViewToggle';
 

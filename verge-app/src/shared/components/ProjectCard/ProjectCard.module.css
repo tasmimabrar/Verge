@@ -6,11 +6,10 @@
  */
 
 .projectCard {
-  transition: all 0.2s ease;
+  transition: box-shadow 0.2s ease;
 }
 
 .projectCard:hover {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
 
@@ -252,10 +251,6 @@
 @media (prefers-reduced-motion: reduce) {
   .projectCard {
     transition: none;
-  }
-  
-  .projectCard:hover {
-    transform: none;
   }
   
   .progressFill {

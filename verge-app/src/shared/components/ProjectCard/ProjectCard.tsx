@@ -14,8 +14,8 @@
 import { format, isPast, isToday } from 'date-fns';
 import { FiCalendar, FiCheckCircle, FiClock } from 'react-icons/fi';
 import { toDate } from '@/shared/utils/dateHelpers';
-import { Card, Badge } from '@/shared/components';
-import type { Project } from '@/shared/types';
+import { Card, Badge, ProjectStatusDropdown } from '@/shared/components';
+import type { Project, ProjectStatus } from '@/shared/types';
 import styles from './ProjectCard.module.css';
 
 export interface ProjectCardProps {
@@ -33,6 +33,9 @@ export interface ProjectCardProps {
   
   /** Click handler (typically for navigation) */
   onClick?: (project: Project) => void;
+  
+  /** Status change handler (enables dropdown) */
+  onStatusChange?: (projectId: string, newStatus: ProjectStatus) => void;
   
   /** Additional CSS classes */
   className?: string;
@@ -81,6 +84,7 @@ export const ProjectCard = ({
   variant = 'preview',
   taskStats,
   onClick,
+  onStatusChange,
   className = '',
 }: ProjectCardProps) => {
   // Handle both Timestamp and Date objects using helper
@@ -91,6 +95,12 @@ export const ProjectCard = ({
   const handleClick = () => {
     if (onClick) {
       onClick(project);
+    }
+  };
+  
+  const handleStatusChange = (newStatus: ProjectStatus) => {
+    if (onStatusChange) {
+      onStatusChange(project.id, newStatus);
     }
   };
   
@@ -105,9 +115,17 @@ export const ProjectCard = ({
         <div className={styles.previewContent}>
           <div className={styles.header}>
             <h4 className={styles.title}>{project.name}</h4>
-            <Badge variant={getStatusVariant(project.status)} size="sm">
-              {project.status}
-            </Badge>
+            {onStatusChange ? (
+              <ProjectStatusDropdown
+                currentStatus={project.status}
+                onStatusChange={handleStatusChange}
+                size="small"
+              />
+            ) : (
+              <Badge variant={getStatusVariant(project.status)} size="sm">
+                {project.status}
+              </Badge>
+            )}
           </div>
           
           {taskStats && (
@@ -147,9 +165,17 @@ export const ProjectCard = ({
         <div className={styles.header}>
           <div className={styles.titleRow}>
             <h3 className={styles.title}>{project.name}</h3>
-            <Badge variant={getStatusVariant(project.status)} size="md">
-              {project.status}
-            </Badge>
+            {onStatusChange ? (
+              <ProjectStatusDropdown
+                currentStatus={project.status}
+                onStatusChange={handleStatusChange}
+                size="medium"
+              />
+            ) : (
+              <Badge variant={getStatusVariant(project.status)} size="md">
+                {project.status}
+              </Badge>
+            )}
           </div>
           <p className={project.description ? styles.description : styles.noDescription}>
             {project.description 

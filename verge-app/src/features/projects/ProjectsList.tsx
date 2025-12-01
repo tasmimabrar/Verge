@@ -4,10 +4,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FiPlus, FiSearch, FiFilter, FiFolder } from 'react-icons/fi';
 import { Button, Card, Loader, EmptyState, ProjectCard, AppLayout } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { useProjects } from '@/shared/hooks/useProjects';
+import { useProjects, useUpdateProject } from '@/shared/hooks/useProjects';
 import { useTasks } from '@/shared/hooks/useTasks';
 import { toDate } from '@/shared/utils/dateHelpers';
 import type { ProjectStatus } from '@/shared/types';
+import { toast } from 'sonner';
 import styles from './ProjectsList.module.css';
 
 /**
@@ -39,6 +40,7 @@ export const ProjectsList: FC = () => {
   // Fetch data
   const { data: allProjects, isLoading } = useProjects(user?.uid || '');
   const { data: allTasks, isLoading: tasksLoading } = useTasks(user?.uid || '');
+  const updateProject = useUpdateProject();
   
   /**
    * Calculate task stats for a project
@@ -53,6 +55,25 @@ export const ProjectsList: FC = () => {
       total: projectTasks.length,
       completed,
     };
+  };
+  
+  /**
+   * Handle project status change
+   */
+  const handleStatusChange = async (projectId: string, newStatus: ProjectStatus) => {
+    if (!user) return;
+    
+    try {
+      await updateProject.mutateAsync({
+        id: projectId,
+        status: newStatus,
+        userId: user.uid,
+      });
+      toast.success(`Project status changed to ${newStatus}`);
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      toast.error('Failed to update project status');
+    }
   };
   
   /**
@@ -247,6 +268,7 @@ export const ProjectsList: FC = () => {
                 variant="full"
                 taskStats={getProjectTaskStats(project.id)}
                 onClick={() => handleProjectClick(project.id)}
+                onStatusChange={handleStatusChange}
               />
             ))}
           </div>

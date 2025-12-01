@@ -384,7 +384,7 @@ export const Sidebar: FC = () => {
 
       {/* Footer section for future use (version, help, etc.) */}
       <div className={styles.footer}>
-        <div className={styles.version}>Depricated Build</div>
+        <div className={styles.version}>Vercel Build</div>
       </div>
     </aside>
   );

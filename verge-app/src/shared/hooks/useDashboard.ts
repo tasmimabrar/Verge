@@ -53,6 +53,10 @@ export const useDashboardStats = (userId: string) => {
   return useQuery({
     queryKey: queryKeys.dashboard.stats(userId),
     queryFn: async () => {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+      
       // Fetch all active tasks (not done) for the user
       const tasksRef = collection(db, 'tasks');
       const q = firestoreQuery(
@@ -140,7 +144,7 @@ export const useDashboardStats = (userId: string) => {
       return stats;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes - dashboard data should be relatively fresh
-    enabled: !!userId,
+    enabled: !!userId && userId.length > 0, // Only run if userId is valid
   });
 };
 
@@ -160,6 +164,10 @@ export const useCompletionRate = (userId: string) => {
   return useQuery({
     queryKey: [...queryKeys.dashboard.stats(userId), 'completion-rate'],
     queryFn: async () => {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+      
       const tasksRef = collection(db, 'tasks');
       const q = firestoreQuery(
         tasksRef,
@@ -177,7 +185,7 @@ export const useCompletionRate = (userId: string) => {
       return Math.round((completedTasks / totalTasks) * 100);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes - less critical than main stats
-    enabled: !!userId,
+    enabled: !!userId && userId.length > 0,
   });
 };
 
@@ -199,6 +207,10 @@ export const useProductivityTrend = (userId: string, days: number = 7) => {
   return useQuery({
     queryKey: [...queryKeys.dashboard.stats(userId), 'trend', days],
     queryFn: async () => {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+      
       const tasksRef = collection(db, 'tasks');
       
       // Calculate date range
@@ -241,7 +253,7 @@ export const useProductivityTrend = (userId: string, days: number = 7) => {
       return Object.entries(dailyCounts).map(([date, count]) => [date, count] as [string, number]);
     },
     staleTime: 10 * 60 * 1000, // 10 minutes - historical data doesn't change often
-    enabled: !!userId,
+    enabled: !!userId && userId.length > 0,
   });
 };
 
@@ -262,6 +274,10 @@ export const useFocusScore = (userId: string) => {
   return useQuery({
     queryKey: [...queryKeys.dashboard.stats(userId), 'focus-score'],
     queryFn: async () => {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+      
       const tasksRef = collection(db, 'tasks');
       const q = firestoreQuery(
         tasksRef,
@@ -282,6 +298,6 @@ export const useFocusScore = (userId: string) => {
       return Math.round((completedHighPriority / totalHighPriority) * 100);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    enabled: !!userId,
+    enabled: !!userId && userId.length > 0,
   });
 };

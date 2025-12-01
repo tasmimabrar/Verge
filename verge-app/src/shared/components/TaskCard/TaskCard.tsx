@@ -177,9 +177,12 @@ export const TaskCard = ({
           </div>
         </div>
         
-        {task.notes && (
-          <p className={styles.notes}>{task.notes}</p>
-        )}
+        <p className={task.notes ? styles.notes : styles.noDescription}>
+          {task.notes 
+            ? (task.notes.length > 180 ? `${task.notes.substring(0, 180)}...` : task.notes)
+            : 'No Description'
+          }
+        </p>
         
         <div className={styles.details}>
           <div className={styles.detailItem}>
@@ -226,7 +229,7 @@ export const TaskCard = ({
           </div>
         )}
         
-        {task.tags && task.tags.length > 0 && (
+        {task.tags && task.tags.length > 0 ? (
           <div className={styles.tags}>
             {task.tags.map((tag, index) => (
               <Badge key={index} variant="default" size="sm">
@@ -234,6 +237,8 @@ export const TaskCard = ({
               </Badge>
             ))}
           </div>
+        ) : (
+          <div className={styles.noTags}>No Tags</div>
         )}
       </div>
     </Card>

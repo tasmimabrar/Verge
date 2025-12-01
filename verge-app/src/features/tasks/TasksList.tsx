@@ -8,6 +8,7 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { useTasks, useUpdateTask } from '@/shared/hooks/useTasks';
 import { useProjects } from '@/shared/hooks/useProjects';
 import { toDate } from '@/shared/utils/dateHelpers';
+import { isToday, isThisWeek, isAfter } from 'date-fns';
 import type { TaskStatus as TaskStatusType, TaskPriority } from '@/shared/types';
 import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
 import styles from './TasksList.module.css';
@@ -19,7 +20,7 @@ import styles from './TasksList.module.css';
  * Uses URL query params for shareable filtered views.
  * 
  * Features:
- * - Filter by status, priority, project
+ * - Filter by status, priority, project, quick filters (today, week, high, overdue)
  * - Sort by due date, priority, name, created date
  * - Search by title/notes
  * - Create new task button
@@ -30,7 +31,8 @@ export const TasksList: FC = () => {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // Get filter/sort values from URL query params  
+  // Get filter/sort values from URL query params
+  const quickFilter = searchParams.get('filter') || null; // today, week, high, overdue
   const statusFilter = (searchParams.get('status') || 'all') as TaskStatusType | 'all';
   const priorityFilter = (searchParams.get('priority') || 'all') as TaskPriority | 'all';
   const projectFilter = searchParams.get('project') || 'all';
@@ -81,6 +83,35 @@ export const TasksList: FC = () => {
     if (!allTasks) return [];
     
     let filtered = [...allTasks];
+    
+    // Quick filters (from sidebar)
+    if (quickFilter) {
+      const now = new Date();
+      
+      switch (quickFilter) {
+        case 'today':
+          filtered = filtered.filter(task => {
+            if (!task.dueDate) return false;
+            return isToday(toDate(task.dueDate));
+          });
+          break;
+        case 'week':
+          filtered = filtered.filter(task => {
+            if (!task.dueDate) return false;
+            return isThisWeek(toDate(task.dueDate), { weekStartsOn: 0 });
+          });
+          break;
+        case 'high':
+          filtered = filtered.filter(task => task.priority === 'high');
+          break;
+        case 'overdue':
+          filtered = filtered.filter(task => {
+            if (!task.dueDate) return false;
+            return isAfter(now, toDate(task.dueDate)) && task.status !== 'done';
+          });
+          break;
+      }
+    }
     
     // Filter by status
     if (statusFilter !== 'all') {
@@ -133,7 +164,7 @@ export const TasksList: FC = () => {
     });
     
     return filtered;
-  }, [allTasks, statusFilter, priorityFilter, projectFilter, searchQuery, sortBy, sortOrder]);
+  }, [allTasks, quickFilter, statusFilter, priorityFilter, projectFilter, searchQuery, sortBy, sortOrder]);
   
   const handleTaskClick = (taskId: string) => {
     navigate(`/tasks/${taskId}`);
@@ -154,6 +185,21 @@ export const TasksList: FC = () => {
     return projects?.find(p => p.id === projectId)?.name;
   };
   
+  /**
+   * Get page title based on active filters
+   */
+  const getPageTitle = (): string => {
+    if (quickFilter) {
+      switch (quickFilter) {
+        case 'today': return 'Today';
+        case 'week': return 'This Week';
+        case 'high': return 'High Priority';
+        case 'overdue': return 'Overdue';
+      }
+    }
+    return 'All Tasks';
+  };
+  
   return (
     <AppLayout>
       <div className={styles.container}>
@@ -162,7 +208,7 @@ export const TasksList: FC = () => {
         <div className={styles.headerLeft}>
           <FiList className={styles.headerIcon} />
           <div>
-            <h1 className={styles.title}>All Tasks</h1>
+            <h1 className={styles.title}>{getPageTitle()}</h1>
             <p className={styles.subtitle}>
               {filteredAndSortedTasks.length} {filteredAndSortedTasks.length === 1 ? 'task' : 'tasks'}
             </p>

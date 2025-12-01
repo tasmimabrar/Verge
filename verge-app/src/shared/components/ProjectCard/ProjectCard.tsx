@@ -151,9 +151,12 @@ export const ProjectCard = ({
               {project.status}
             </Badge>
           </div>
-          {project.description && (
-            <p className={styles.description}>{project.description}</p>
-          )}
+          <p className={project.description ? styles.description : styles.noDescription}>
+            {project.description 
+              ? (project.description.length > 180 ? `${project.description.substring(0, 180)}...` : project.description)
+              : 'No Description'
+            }
+          </p>
         </div>
         
         {taskStats && (

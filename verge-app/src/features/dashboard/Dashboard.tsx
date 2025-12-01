@@ -12,6 +12,27 @@ import styles from './Dashboard.module.css';
 export const Dashboard: FC = () => {
   const { user } = useAuth();
   const { data: stats, isLoading, error } = useDashboardStats(user?.uid || '');
+  
+  // Show loading if user is not loaded yet
+  if (!user) {
+    return (
+      <AppLayout>
+        <div className={styles.container}>
+          <div className={styles.statsGrid}>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className={styles.skeletonCard}>
+                <div className={styles.skeletonIcon} />
+                <div className={styles.skeletonContent}>
+                  <div className={styles.skeletonValue} />
+                  <div className={styles.skeletonLabel} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>

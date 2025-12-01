@@ -12,11 +12,13 @@
   flex-direction: column;
   z-index: 90;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .logoSection {
   padding: var(--spacing-lg);
   border-bottom: var(--border-width) solid var(--color-border);
+  flex-shrink: 0;
 }
 
 .logo {
@@ -31,6 +33,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
+  overflow-y: auto;
 }
 
 .navItem {
@@ -63,11 +66,256 @@
 
 .navLabel {
   font-size: var(--font-size-base);
+  flex: 1;
+}
+
+/* Section Styling */
+.section {
+  margin-top: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  border-radius: var(--border-radius-sm);
+  transition: all var(--transition-base);
+  
+  &:hover {
+    background: var(--color-hover);
+  }
+}
+
+.sectionChevron {
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: transform var(--transition-base);
+}
+
+.sectionIcon {
+  font-size: 14px;
+}
+
+/* Quick Filters */
+.quickFilter {
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  padding-left: calc(var(--spacing-md) + var(--spacing-lg));
+  position: relative;
+}
+
+.quickFilter.overdue {
+  color: var(--color-error);
+  
+  &:hover {
+    background: rgba(220, 38, 38, 0.1);
+    color: var(--color-error);
+  }
+}
+
+/* Projects Section */
+.projectItem {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--spacing-xs);
+  margin-left: var(--spacing-lg);
+}
+
+.projectHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  text-align: left;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  width: 100%;
+  
+  &:hover {
+    background: var(--color-hover);
+    color: var(--color-text-primary);
+    
+    .addTaskBtn {
+      opacity: 1;
+    }
+  }
+}
+
+.chevron {
+  font-size: 16px;
+  flex-shrink: 0;
+  transition: transform var(--transition-base);
+}
+
+.projectIcon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.projectName {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.addTaskBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  opacity: 0;
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+  
+  &:hover {
+    background: var(--color-primary-dark);
+    transform: scale(1.1);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+  
+  svg {
+    font-size: 12px;
+  }
+}
+
+/* Task List (nested under projects) */
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: var(--spacing-lg);
+  margin-top: var(--spacing-xs);
+}
+
+.taskItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-base);
+  
+  &:hover {
+    background: var(--color-hover);
+    color: var(--color-text-primary);
+    transform: translateX(2px);
+  }
+}
+
+.taskIcon {
+  font-size: 14px;
+  flex-shrink: 0;
+  opacity: 0.6;
+  color: var(--color-text-tertiary);
+}
+
+.taskIcon.taskDone {
+  color: var(--color-success);
+  opacity: 1;
+}
+
+.taskIcon.taskInProgress {
+  color: #eab308; /* Yellow */
+  opacity: 1;
+}
+
+.taskIcon.taskPostponed {
+  color: #f97316; /* Orange */
+  opacity: 1;
+}
+
+.taskTitle {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.taskPriorityDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.taskPriorityDot.priorityHigh {
+  background: var(--color-error); /* Red */
+}
+
+.taskPriorityDot.priorityMedium {
+  background: #ea580c; /* Orange */
+}
+
+.taskPriorityDot.priorityLow {
+  background: var(--color-success); /* Green */
+}
+
+/* Empty State */
+.emptyState {
+  padding: var(--spacing-lg);
+  padding-left: calc(var(--spacing-lg) + var(--spacing-lg));
+  text-align: center;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+/* See All Link */
+.seeAllLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-top: var(--spacing-sm);
+  margin-left: var(--spacing-lg);
+  color: var(--color-primary);
+  text-decoration: none;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-base);
+  
+  &:hover {
+    background: var(--color-primary-light);
+    transform: translateX(2px);
+  }
 }
 
 .footer {
   padding: var(--spacing-md);
   border-top: var(--border-width) solid var(--color-border);
+  flex-shrink: 0;
 }
 
 .version {
@@ -83,7 +331,12 @@
   }
   
   .navLabel,
-  .version {
+  .version,
+  .section,
+  .sectionHeader,
+  .projectItem,
+  .taskList,
+  .seeAllLink {
     display: none;
   }
   

@@ -96,6 +96,14 @@
   margin: 0;
 }
 
+.noDescription {
+  font-size: var(--font-size-md);
+  color: var(--color-text-tertiary);
+  font-style: italic;
+  line-height: 1.6;
+  margin: 0;
+}
+
 /* Progress Section */
 .progressSection {
   display: flex;

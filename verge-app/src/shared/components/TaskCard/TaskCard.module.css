@@ -122,6 +122,14 @@
   margin: 0;
 }
 
+.noDescription {
+  font-size: var(--font-size-md);
+  color: var(--color-text-tertiary);
+  font-style: italic;
+  line-height: 1.6;
+  margin: 0;
+}
+
 .details {
   display: flex;
   flex-wrap: wrap;
@@ -233,6 +241,13 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+}
+
+.noTags {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  font-style: italic;
   margin-top: var(--spacing-sm);
 }
 

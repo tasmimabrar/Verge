@@ -140,12 +140,8 @@
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-sm);
-  background: none;
-  border: none;
   color: var(--color-text-secondary);
-  text-align: left;
   border-radius: var(--border-radius-md);
-  cursor: pointer;
   transition: all var(--transition-base);
   width: 100%;
   
@@ -156,6 +152,45 @@
     .addTaskBtn {
       opacity: 1;
     }
+  }
+}
+
+.chevronBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  color: inherit;
+  flex-shrink: 0;
+  border-radius: var(--border-radius-sm);
+  transition: background var(--transition-base);
+  
+  &:hover {
+    background: var(--color-bg-tertiary);
+  }
+}
+
+.projectLink {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: inherit;
+  text-align: left;
+  border-radius: var(--border-radius-sm);
+  transition: all var(--transition-base);
+  min-width: 0;
+  
+  &:hover {
+    background: var(--color-bg-tertiary);
+    transform: translateX(2px);
   }
 }
 

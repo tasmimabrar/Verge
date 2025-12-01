@@ -305,21 +305,29 @@ export const Sidebar: FC = () => {
                 
                 return (
                   <div key={project.id} className={styles.projectItem}>
-                    <button
-                      className={styles.projectHeader}
-                      onClick={() => toggleProject(project.id)}
-                      aria-expanded={isExpanded}
-                    >
-                      {isExpanded ? (
-                        <FiChevronDown className={styles.chevron} />
-                      ) : (
-                        <FiChevronRight className={styles.chevron} />
-                      )}
-                      <FiFolder className={styles.projectIcon} />
-                      <span className={styles.projectName}>{project.name}</span>
-                      {projectTasks.length > 0 && (
-                        <Badge variant="default" size="sm">{projectTasks.length}</Badge>
-                      )}
+                    <div className={styles.projectHeader}>
+                      <button
+                        className={styles.chevronBtn}
+                        onClick={() => toggleProject(project.id)}
+                        aria-expanded={isExpanded}
+                        aria-label={isExpanded ? 'Collapse project' : 'Expand project'}
+                      >
+                        {isExpanded ? (
+                          <FiChevronDown className={styles.chevron} />
+                        ) : (
+                          <FiChevronRight className={styles.chevron} />
+                        )}
+                      </button>
+                      <button
+                        className={styles.projectLink}
+                        onClick={() => navigate(`/projects/${project.id}`)}
+                      >
+                        <FiFolder className={styles.projectIcon} />
+                        <span className={styles.projectName}>{project.name}</span>
+                        {projectTasks.length > 0 && (
+                          <Badge variant="default" size="sm">{projectTasks.length}</Badge>
+                        )}
+                      </button>
                       <button
                         className={styles.addTaskBtn}
                         onClick={(e) => {
@@ -330,7 +338,7 @@ export const Sidebar: FC = () => {
                       >
                         <FiPlus />
                       </button>
-                    </button>
+                    </div>
                     
                     {isExpanded && tasksToShow.length > 0 && (
                       <div className={styles.taskList}>

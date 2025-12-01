@@ -1,11 +1,10 @@
 import type { FC } from 'react';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
 import { Timestamp } from 'firebase/firestore';
-import { format, subDays, subWeeks, subMonths } from 'date-fns';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { FiEdit2, FiTrash2, FiSave, FiX, FiCalendar, FiTag, FiAlertCircle, FiStar } from 'react-icons/fi';
+import { FiTrash2, FiCalendar, FiTag, FiAlertCircle, FiStar } from 'react-icons/fi';
 import { toDate, dateStringToLocalDate } from '@/shared/utils/dateHelpers';
 import { AppLayout, Card, Button, Loader, EmptyState, Badge, SubtaskList, TaskStatusDropdown, PriorityDropdown } from '@/shared/components';
 import { AIAssistPanel } from './components/AIAssistPanel';
@@ -13,43 +12,40 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { useTask, useUpdateTask, useDeleteTask } from '@/shared/hooks/useTasks';
 import { useProjects } from '@/shared/hooks/useProjects';
 import { getUserSettings } from '@/lib/firebase/firestore';
-import type { Subtask, UserSettings, TaskReminder } from '@/shared/types';
+import type { Subtask, UserSettings } from '@/shared/types';
 import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
 import type { TaskPriority } from '@/shared/components/PriorityDropdown';
 import styles from './TaskDetail.module.css';
 
-interface TaskFormData {
-  title: string;
-  notes: string;
-  dueDate: string;
-  priority: 'low' | 'medium' | 'high';
-  projectId: string;
-  tags: string;
-  status: 'todo' | 'in_progress' | 'done' | 'postponed';
-  reminderEnabled: boolean;
-  reminderAmount: number;
-  reminderUnit: 'day' | 'week' | 'month';
-}
-
 /**
  * TaskDetail Component
  * 
- * Full task detail screen with read/edit modes.
+ * Full task detail screen with inline editing.
  * Features:
  * - View all task details
- * - Edit mode with form validation
+ * - Inline editing for title, notes, due date, project
  * - Delete task with confirmation
- * - Navigate back to dashboard/tasks list
- * - Inline task creation context from project
+ * - AI Assist panel
+ * - Subtask management
  */
 export const TaskDetail: FC = () => {
   const { id: taskId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
   const [isAIAssistOpen, setIsAIAssistOpen] = useState(false);
-  const [showReminderFields, setShowReminderFields] = useState(false);
+  
+  // Inline editing states
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleValue, setTitleValue] = useState('');
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesValue, setNotesValue] = useState('');
+  const [editingDueDate, setEditingDueDate] = useState(false);
+  const [dueDateValue, setDueDateValue] = useState('');
+  const [editingProject, setEditingProject] = useState(false);
+  const [projectValue, setProjectValue] = useState('');
+  const [editingTags, setEditingTags] = useState(false);
+  const [tagsValue, setTagsValue] = useState('');
 
   // Queries
   const { data: task, isLoading, error } = useTask(taskId);
@@ -73,94 +69,186 @@ export const TaskDetail: FC = () => {
     loadSettings();
   }, [user]);
 
-  // Form
-  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<TaskFormData>({
-    defaultValues: {
-      title: '',
-      notes: '',
-      dueDate: '',
-      priority: 'medium',
-      projectId: '',
-      tags: '',
-      status: 'todo',
-      reminderEnabled: false,
-      reminderAmount: 1,
-      reminderUnit: 'day',
-    },
-  });
-
-  // Update form when task loads - use useEffect to avoid infinite loop
+  // Initialize inline edit values when task loads - suppressing ESLint warnings as this is intentional
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (task) {
-      const hasReminder = task.reminder?.enabled || false;
-      
-      reset({
-        title: task.title,
-        notes: task.notes || '',
-        dueDate: task.dueDate ? format(toDate(task.dueDate), 'yyyy-MM-dd') : '',
-        priority: task.priority,
-        projectId: task.projectId,
-        tags: task.tags?.join(', ') || '',
-        status: task.status,
-        reminderEnabled: hasReminder,
-        reminderAmount: task.reminder?.amount || 1,
-        reminderUnit: task.reminder?.unit || 'day',
-      });
+    if (task && !editingTitle) {
+      setTitleValue(task.title);
     }
-  }, [task, reset]);
+  }, [task?.id]); // Only run when task ID changes
+  
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (task && !editingNotes) {
+      setNotesValue(task.notes || '');
+    }
+  }, [task?.id]);
+  
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (task && !editingDueDate) {
+      setDueDateValue(task.dueDate ? format(toDate(task.dueDate), 'yyyy-MM-dd') : '');
+    }
+  }, [task?.id]);
+  
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (task && !editingProject) {
+      setProjectValue(task.projectId);
+    }
+  }, [task?.id]);
 
-  const onSubmit = async (data: TaskFormData) => {
-    if (!taskId) return;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (task && !editingTags) {
+      setTagsValue(task.tags ? task.tags.join(', ') : '');
+    }
+  }, [task?.id]);
+
+  // Inline edit handlers
+  const handleTitleSave = async () => {
+    if (!task || !taskId || !titleValue.trim()) {
+      setTitleValue(task?.title || '');
+      setEditingTitle(false);
+      return;
+    }
+    
+    if (titleValue === task.title) {
+      setEditingTitle(false);
+      return;
+    }
 
     try {
-      const tags = data.tags?.trim()
-        ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean)
-        : [];
-
-      // Calculate reminder date if enabled
-      let reminder: TaskReminder | undefined;
-      if (data.reminderEnabled && data.reminderAmount > 0) {
-        const dueDate = dateStringToLocalDate(data.dueDate);
-        let reminderDate: Date;
-        
-        switch (data.reminderUnit) {
-          case 'day':
-            reminderDate = subDays(dueDate, data.reminderAmount);
-            break;
-          case 'week':
-            reminderDate = subWeeks(dueDate, data.reminderAmount);
-            break;
-          case 'month':
-            reminderDate = subMonths(dueDate, data.reminderAmount);
-            break;
-        }
-        
-        reminder = {
-          enabled: true,
-          amount: data.reminderAmount,
-          unit: data.reminderUnit,
-          reminderDate: Timestamp.fromDate(reminderDate),
-        };
-      }
-
       await updateTask.mutateAsync({
         id: taskId,
-        title: data.title,
-        notes: data.notes?.trim() || '', // Send empty string to clear field
-        dueDate: Timestamp.fromDate(dateStringToLocalDate(data.dueDate)),
-        priority: data.priority,
-        projectId: data.projectId,
-        tags: tags.length > 0 ? tags : [], // Send empty array to clear tags
-        status: data.status,
+        title: titleValue.trim(),
         userId: user!.uid,
-        ...(reminder && { reminder }), // Only include reminder if it exists
       });
-
-      toast.success('Task updated successfully!');
-      setIsEditing(false);
+      toast.success('Title updated');
+      setEditingTitle(false);
     } catch (err) {
-      console.error('Failed to update task:', err);
-      toast.error('Failed to update task. Please try again.');
+      console.error('Failed to update title:', err);
+      toast.error('Failed to update title');
+      setTitleValue(task.title);
+      setEditingTitle(false);
+    }
+  };
+
+  const handleNotesSave = async () => {
+    if (!task || !taskId) {
+      setEditingNotes(false);
+      return;
+    }
+    
+    if (notesValue === (task.notes || '')) {
+      setEditingNotes(false);
+      return;
+    }
+
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        notes: notesValue.trim(),
+        userId: user!.uid,
+      });
+      toast.success('Notes updated');
+      setEditingNotes(false);
+    } catch (err) {
+      console.error('Failed to update notes:', err);
+      toast.error('Failed to update notes');
+      setNotesValue(task.notes || '');
+      setEditingNotes(false);
+    }
+  };
+
+  const handleDueDateSave = async () => {
+    if (!task || !taskId || !dueDateValue) {
+      setEditingDueDate(false);
+      return;
+    }
+
+    const newDate = dateStringToLocalDate(dueDateValue);
+    if (newDate.getTime() === toDate(task.dueDate).getTime()) {
+      setEditingDueDate(false);
+      return;
+    }
+
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        dueDate: Timestamp.fromDate(newDate),
+        userId: user!.uid,
+      });
+      toast.success('Due date updated');
+      setEditingDueDate(false);
+    } catch (err) {
+      console.error('Failed to update due date:', err);
+      toast.error('Failed to update due date');
+      setDueDateValue(task.dueDate ? format(toDate(task.dueDate), 'yyyy-MM-dd') : '');
+      setEditingDueDate(false);
+    }
+  };
+
+  const handleProjectSave = async () => {
+    if (!task || !taskId || !projectValue) {
+      setEditingProject(false);
+      return;
+    }
+
+    if (projectValue === task.projectId) {
+      setEditingProject(false);
+      return;
+    }
+
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        projectId: projectValue,
+        userId: user!.uid,
+      });
+      toast.success('Project updated');
+      setEditingProject(false);
+    } catch (err) {
+      console.error('Failed to update project:', err);
+      toast.error('Failed to update project');
+      setProjectValue(task.projectId);
+      setEditingProject(false);
+    }
+  };
+
+  const handleTagsSave = async () => {
+    if (!task || !taskId) {
+      setEditingTags(false);
+      return;
+    }
+
+    // Parse tags from comma-separated string
+    const newTags = tagsValue
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0);
+
+    const currentTags = task.tags || [];
+    const tagsEqual = JSON.stringify(newTags.sort()) === JSON.stringify(currentTags.sort());
+
+    if (tagsEqual) {
+      setEditingTags(false);
+      return;
+    }
+
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        tags: newTags,
+        userId: user!.uid,
+      });
+      toast.success('Tags updated');
+      setEditingTags(false);
+    } catch (err) {
+      console.error('Failed to update tags:', err);
+      toast.error('Failed to update tags');
+      setTagsValue(task.tags ? task.tags.join(', ') : '');
+      setEditingTags(false);
     }
   };
 
@@ -178,11 +266,6 @@ export const TaskDetail: FC = () => {
       console.error('Failed to delete task:', err);
       toast.error('Failed to delete task. Please try again.');
     }
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    reset();
   };
 
   // Subtask handlers
@@ -494,17 +577,89 @@ export const TaskDetail: FC = () => {
                 disabled={updateTask.isPending}
                 size="large"
               />
-              <h1 className={styles.title}>{isEditing ? 'Edit Task' : task.title}</h1>
+              {editingTitle ? (
+                <input
+                  type="text"
+                  className={`${styles.title} ${styles.titleInput}`}
+                  value={titleValue}
+                  onChange={(e) => setTitleValue(e.target.value)}
+                  onBlur={handleTitleSave}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleTitleSave();
+                    }
+                    if (e.key === 'Escape') {
+                      setTitleValue(task.title);
+                      setEditingTitle(false);
+                    }
+                  }}
+                  autoFocus
+                />
+              ) : (
+                <h1
+                  className={`${styles.title} ${styles.editable}`}
+                  onClick={() => setEditingTitle(true)}
+                  title="Click to edit"
+                >
+                  {task.title}
+                </h1>
+              )}
             </div>
             <div className={styles.metadata}>
-              {project && (
-                <span className={styles.project}>
+              {project && editingProject ? (
+                <select
+                  className={styles.projectSelect}
+                  value={projectValue}
+                  onChange={(e) => setProjectValue(e.target.value)}
+                  onBlur={handleProjectSave}
+                  autoFocus
+                >
+                  {projects?.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              ) : project ? (
+                <span
+                  className={`${styles.project} ${styles.editable}`}
+                  onClick={() => setEditingProject(true)}
+                  title="Click to change project"
+                >
                   <FiTag /> {project.name}
                 </span>
+              ) : null}
+              
+              {editingDueDate ? (
+                <input
+                  type="date"
+                  className={styles.dateInput}
+                  value={dueDateValue}
+                  onChange={(e) => setDueDateValue(e.target.value)}
+                  onBlur={handleDueDateSave}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleDueDateSave();
+                    }
+                    if (e.key === 'Escape') {
+                      setDueDateValue(task.dueDate ? format(toDate(task.dueDate), 'yyyy-MM-dd') : '');
+                      setEditingDueDate(false);
+                    }
+                  }}
+                  autoFocus
+                />
+              ) : (
+                <span
+                  className={`${styles.dueDate} ${styles.editable}`}
+                  onClick={() => setEditingDueDate(true)}
+                  title="Click to change due date"
+                >
+                  <FiCalendar /> Due {format(toDate(task.dueDate), 'MMM dd, yyyy')}
+                </span>
               )}
-              <span className={styles.dueDate}>
-                <FiCalendar /> Due {format(toDate(task.dueDate), 'MMM dd, yyyy')}
-              </span>
+              
               <PriorityDropdown
                 currentPriority={task.priority}
                 onPriorityChange={handlePriorityChange}
@@ -513,274 +668,125 @@ export const TaskDetail: FC = () => {
             </div>
           </div>
           
-          {!isEditing && (
-            <div className={styles.headerActions}>
-              {/* AI Assist Button - only show if AI enabled in settings */}
-              {userSettings?.aiEnabled !== false && (
-                <Button
-                  variant="primary"
-                  size="small"
-                  onClick={() => setIsAIAssistOpen(true)}
-                >
-                  <FiStar /> AI Assist
-                </Button>
-              )}
+          <div className={styles.headerActions}>
+            {/* AI Assist Button - only show if AI enabled in settings */}
+            {userSettings?.aiEnabled !== false && (
               <Button
-                variant="secondary"
+                variant="primary"
                 size="small"
-                onClick={() => setIsEditing(true)}
+                onClick={() => setIsAIAssistOpen(true)}
               >
-                <FiEdit2 /> Edit
+                <FiStar /> AI Assist
               </Button>
-              <Button
-                variant="ghost"
-                size="small"
-                onClick={handleDelete}
-              >
-                <FiTrash2 /> Delete
-              </Button>
-            </div>
-          )}
+            )}
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={handleDelete}
+            >
+              <FiTrash2 /> Delete
+            </Button>
+          </div>
         </div>
 
         {/* Content */}
         <Card variant="elevated" padding="large">
-          {isEditing ? (
-            // Edit Mode
-            <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-              {/* Title */}
-              <div className={styles.formGroup}>
-                <label htmlFor="title" className={styles.label}>
-                  Title <span className={styles.required}>*</span>
-                </label>
-                <input
-                  id="title"
-                  type="text"
-                  className={styles.input}
-                  {...register('title', {
-                    required: 'Title is required',
-                    minLength: { value: 3, message: 'Title must be at least 3 characters' },
-                  })}
-                  autoFocus
-                />
-                {errors.title && <span className={styles.error}>{errors.title.message}</span>}
-              </div>
+          {/* Notes */}
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Notes</h3>
+            {editingNotes ? (
+              <textarea
+                className={`${styles.notes} ${styles.notesInput}`}
+                value={notesValue}
+                onChange={(e) => setNotesValue(e.target.value)}
+                onBlur={handleNotesSave}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setNotesValue(task.notes || '');
+                    setEditingNotes(false);
+                  }
+                }}
+                rows={6}
+                autoFocus
+                placeholder="Add detailed notes, context, or requirements..."
+              />
+            ) : (
+              <p
+                className={`${styles.notes} ${task.notes ? styles.editable : styles.notesPlaceholder}`}
+                onClick={() => setEditingNotes(true)}
+                title="Click to edit"
+              >
+                {task.notes || 'Click to add notes...'}
+              </p>
+            )}
+          </div>
 
-              {/* Notes */}
-              <div className={styles.formGroup}>
-                <label htmlFor="notes" className={styles.label}>
-                  Notes
-                </label>
-                <textarea
-                  id="notes"
-                  className={styles.textarea}
-                  rows={6}
-                  {...register('notes')}
-                  placeholder="Add detailed notes, context, or requirements..."
-                />
-              </div>
+          {/* Subtasks */}
+          <div className={styles.section}>
+            <SubtaskList
+              subtasks={task.subtasks || []}
+              onToggle={handleToggleSubtask}
+              onAdd={handleAddSubtask}
+              onDelete={handleDeleteSubtask}
+              disabled={updateTask.isPending}
+            />
+          </div>
 
-              {/* Due Date & Priority */}
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label htmlFor="dueDate" className={styles.label}>
-                    Due Date <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    id="dueDate"
-                    type="date"
-                    className={styles.input}
-                    {...register('dueDate', {
-                      required: 'Due date is required',
-                      validate: value => {
-                        const selected = new Date(value);
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        return selected >= today || 'Due date cannot be in the past';
-                      },
-                    })}
-                  />
-                  {errors.dueDate && <span className={styles.error}>{errors.dueDate.message}</span>}
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label htmlFor="priority" className={styles.label}>
-                    Priority <span className={styles.required}>*</span>
-                  </label>
-                  <select
-                    id="priority"
-                    className={styles.select}
-                    {...register('priority', { required: 'Priority is required' })}
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                  {errors.priority && <span className={styles.error}>{errors.priority.message}</span>}
-                </div>
-              </div>
-
-              {/* Project & Status */}
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label htmlFor="projectId" className={styles.label}>
-                    Project <span className={styles.required}>*</span>
-                  </label>
-                  <select
-                    id="projectId"
-                    className={styles.select}
-                    {...register('projectId', { required: 'Project is required' })}
-                  >
-                    <option value="">Select a project</option>
-                    {projects?.map(project => (
-                      <option key={project.id} value={project.id}>
-                        {project.name}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.projectId && <span className={styles.error}>{errors.projectId.message}</span>}
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label htmlFor="status" className={styles.label}>
-                    Status <span className={styles.required}>*</span>
-                  </label>
-                  <select
-                    id="status"
-                    className={styles.select}
-                    {...register('status', { required: 'Status is required' })}
-                  >
-                    <option value="todo">To Do</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="done">Done</option>
-                    <option value="postponed">Postponed</option>
-                  </select>
-                  {errors.status && <span className={styles.error}>{errors.status.message}</span>}
-                </div>
-              </div>
-
-              {/* Tags */}
-              <div className={styles.formGroup}>
-                <label htmlFor="tags" className={styles.label}>
-                  Tags
-                </label>
-                <input
-                  id="tags"
-                  type="text"
-                  className={styles.input}
-                  {...register('tags')}
-                  placeholder="e.g. urgent, backend, bug-fix (comma-separated)"
-                />
-              </div>
-
-              {/* Reminder */}
-              <div className={styles.formGroup}>
-                <div className={styles.checkboxWrapper}>
-                  <input
-                    id="reminderEnabled"
-                    type="checkbox"
-                    className={styles.checkbox}
-                    {...register('reminderEnabled')}
-                    onChange={(e) => setShowReminderFields(e.target.checked)}
-                  />
-                  <label htmlFor="reminderEnabled" className={styles.checkboxLabel}>
-                    Set a reminder for this task
-                  </label>
-                </div>
-                
-                {showReminderFields && (
-                  <div className={styles.reminderFields}>
-                    <span className={styles.reminderLabel}>Remind me</span>
-                    <input
-                      id="reminderAmount"
-                      type="number"
-                      min="1"
-                      max="365"
-                      className={styles.reminderInput}
-                      {...register('reminderAmount', {
-                        valueAsNumber: true,
-                        min: { value: 1, message: 'Must be at least 1' },
-                      })}
-                    />
-                    <select
-                      id="reminderUnit"
-                      className={styles.reminderSelect}
-                      {...register('reminderUnit')}
-                    >
-                      <option value="day">day(s)</option>
-                      <option value="week">week(s)</option>
-                      <option value="month">month(s)</option>
-                    </select>
-                    <span className={styles.reminderLabel}>before due date</span>
-                  </div>
-                )}
-                {errors.reminderAmount && showReminderFields && (
-                  <span className={styles.error}>{errors.reminderAmount.message}</span>
+          {/* Tags */}
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Tags</h3>
+            {editingTags ? (
+              <input
+                type="text"
+                className={styles.tagsInput}
+                value={tagsValue}
+                onChange={(e) => setTagsValue(e.target.value)}
+                onBlur={handleTagsSave}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleTagsSave();
+                  }
+                  if (e.key === 'Escape') {
+                    setTagsValue(task.tags ? task.tags.join(', ') : '');
+                    setEditingTags(false);
+                  }
+                }}
+                autoFocus
+                placeholder="Enter tags separated by commas (e.g., urgent, design, review)"
+              />
+            ) : (
+              <div 
+                className={`${styles.tags} ${task.tags && task.tags.length > 0 ? styles.editable : styles.tagsPlaceholder}`}
+                onClick={() => setEditingTags(true)}
+              >
+                {task.tags && task.tags.length > 0 ? (
+                  task.tags.map((tag, index) => (
+                    <Badge key={index} variant="default">
+                      {tag}
+                    </Badge>
+                  ))
+                ) : (
+                  <span className={styles.placeholderText}>Click to add tags...</span>
                 )}
               </div>
+            )}
+          </div>
 
-              {/* Actions */}
-              <div className={styles.formActions}>
-                <Button type="button" variant="secondary" onClick={handleCancel}>
-                  <FiX /> Cancel
-                </Button>
-                <Button type="submit" variant="primary" loading={isSubmitting}>
-                  <FiSave /> Save Changes
-                </Button>
-              </div>
-            </form>
-          ) : (
-            // Read Mode
-            <div className={styles.details}>
-              {/* Notes */}
-              {task.notes && (
-                <div className={styles.section}>
-                  <h3 className={styles.sectionTitle}>Notes</h3>
-                  <p className={styles.notes}>{task.notes}</p>
-                </div>
-              )}
-
-              {/* Subtasks */}
-              <div className={styles.section}>
-                <SubtaskList
-                  subtasks={task.subtasks || []}
-                  onToggle={handleToggleSubtask}
-                  onAdd={handleAddSubtask}
-                  onDelete={handleDeleteSubtask}
-                  disabled={updateTask.isPending}
-                />
-              </div>
-
-              {/* Tags */}
-              {task.tags && task.tags.length > 0 && (
-                <div className={styles.section}>
-                  <h3 className={styles.sectionTitle}>Tags</h3>
-                  <div className={styles.tags}>
-                    {task.tags.map((tag, index) => (
-                      <Badge key={index} variant="default">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Timestamps */}
-              <div className={styles.section}>
-                <h3 className={styles.sectionTitle}>Metadata</h3>
-                <div className={styles.timestamps}>
-                  <p>
-                    <strong>Created:</strong>{' '}
-                    {task.createdAt && format(toDate(task.createdAt), 'MMM dd, yyyy h:mm a')}
-                  </p>
-                  <p>
-                    <strong>Last Updated:</strong>{' '}
-                    {task.updatedAt && format(toDate(task.updatedAt), 'MMM dd, yyyy h:mm a')}
-                  </p>
-                </div>
-              </div>
+          {/* Timestamps */}
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Metadata</h3>
+            <div className={styles.timestamps}>
+              <p>
+                <strong>Created:</strong>{' '}
+                {task.createdAt && format(toDate(task.createdAt), 'MMM dd, yyyy h:mm a')}
+              </p>
+              <p>
+                <strong>Last Updated:</strong>{' '}
+                {task.updatedAt && format(toDate(task.updatedAt), 'MMM dd, yyyy h:mm a')}
+              </p>
             </div>
-          )}
+          </div>
         </Card>
 
         {/* Back Button */}

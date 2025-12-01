@@ -72,12 +72,14 @@ export const SearchModal: FC<SearchModalProps> = ({ isOpen, onClose }) => {
       const notesMatch = task.notes?.toLowerCase().includes(searchTerm);
       const statusMatch = task.status.toLowerCase().includes(searchTerm);
       const priorityMatch = task.priority.toLowerCase().includes(searchTerm);
-      const regexMatch = regexPattern.test(task.title) || (task.notes && regexPattern.test(task.notes));
+      const tagsMatch = task.tags?.some(tag => tag.toLowerCase().includes(searchTerm));
+      const regexMatch = regexPattern.test(task.title) || (task.notes && regexPattern.test(task.notes)) || (task.tags && task.tags.some(tag => regexPattern.test(tag)));
 
       if (titleMatch) score += 10; // Highest priority
       if (notesMatch) score += 5;
       if (statusMatch) score += 7;
       if (priorityMatch) score += 7;
+      if (tagsMatch) score += 9; // High priority for tag matches
       if (regexMatch) score += 3;
 
       // Also match common aliases
@@ -181,7 +183,7 @@ export const SearchModal: FC<SearchModalProps> = ({ isOpen, onClose }) => {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search tasks, projects by title, status, priority..."
+            placeholder="Search tasks, projects by title, status, priority, tags..."
             className={styles.searchInput}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -205,7 +207,7 @@ export const SearchModal: FC<SearchModalProps> = ({ isOpen, onClose }) => {
               <FiSearch className={styles.emptyIcon} />
               <p className={styles.emptyText}>Start typing to search...</p>
               <p className={styles.emptyHint}>
-                Try: task title, "high priority", "done", "in progress", project name
+                Try: task title, "high priority", "done", "in progress", tags, project name
               </p>
             </div>
           ) : results.length === 0 ? (
@@ -228,6 +230,11 @@ export const SearchModal: FC<SearchModalProps> = ({ isOpen, onClose }) => {
                   <div className={styles.resultsList}>
                     {categorizedResults.tasks.map((result) => {
                       const task = result.item as Task;
+                      const searchTermLower = query.toLowerCase().trim();
+                      const matchingTags = task.tags?.filter(tag => 
+                        tag.toLowerCase().includes(searchTermLower)
+                      ) || [];
+                      
                       return (
                         <button
                           key={task.id}
@@ -252,6 +259,11 @@ export const SearchModal: FC<SearchModalProps> = ({ isOpen, onClose }) => {
                               <Badge variant={task.priority === 'high' ? 'error' : task.priority === 'medium' ? 'warning' : 'success'}>
                                 {task.priority} priority
                               </Badge>
+                              {matchingTags.length > 0 && matchingTags.map((tag, idx) => (
+                                <Badge key={idx} variant="info">
+                                  {tag}
+                                </Badge>
+                              ))}
                               {task.dueDate && (
                                 <span className={styles.dueDate}>
                                   Due: {format(task.dueDate.toDate(), 'MMM dd, yyyy')}

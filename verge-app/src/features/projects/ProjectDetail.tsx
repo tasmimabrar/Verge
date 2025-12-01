@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { FiEdit2, FiTrash2, FiSave, FiX, FiCalendar, FiPlus, FiAlertCircle } from 'react-icons/fi';
+import { FiTrash2, FiCalendar, FiPlus, FiAlertCircle } from 'react-icons/fi';
 import { toDate, dateStringToLocalDate } from '@/shared/utils/dateHelpers';
 import { AppLayout, Card, Button, Loader, EmptyState, TaskCard, ProjectStatusDropdown } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -16,13 +16,6 @@ import type { TaskPriority } from '@/shared/components/PriorityDropdown';
 import type { ProjectStatus } from '@/shared/types';
 import styles from './ProjectDetail.module.css';
 
-interface ProjectFormData {
-  name: string;
-  description: string;
-  dueDate: string;
-  status: 'active' | 'on hold' | 'completed' | 'archived';
-}
-
 interface QuickTaskFormData {
   title: string;
   dueDate: string;
@@ -32,10 +25,10 @@ interface QuickTaskFormData {
 /**
  * ProjectDetail Component
  * 
- * Full project detail screen with read/edit modes + inline task creation.
+ * Project detail screen with inline editing and associated tasks.
  * Features:
- * - View project details and associated tasks
- * - Edit mode with form validation
+ * - Inline editing for project name, description, and due date (click to edit)
+ * - Auto-save on blur (click outside to save)
  * - Delete project with confirmation
  * - Inline task creation (title, dueDate, priority)
  * - Click tasks to navigate to detail
@@ -44,7 +37,15 @@ export const ProjectDetail: FC = () => {
   const { id: projectId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
+  
+  // Inline editing state
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState('');
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [descriptionValue, setDescriptionValue] = useState('');
+  const [editingDueDate, setEditingDueDate] = useState(false);
+  const [dueDateValue, setDueDateValue] = useState('');
+  
   const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   // Queries
@@ -101,15 +102,121 @@ export const ProjectDetail: FC = () => {
     }
   };
 
-  // Project Form
-  const { register: registerProject, handleSubmit: handleProjectSubmit, formState: { errors: projectErrors, isSubmitting: projectSubmitting }, reset: resetProject } = useForm<ProjectFormData>({
-    defaultValues: {
-      name: '',
-      description: '',
-      dueDate: '',
-      status: 'active',
-    },
-  });
+  // Initialize inline editing values when project loads
+  // Note: Intentionally only depends on project?.id to avoid re-initializing during edits
+  useEffect(() => {
+    if (project && !editingName) {
+      setNameValue(project.name);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project?.id]);
+
+  useEffect(() => {
+    if (project && !editingDescription) {
+      setDescriptionValue(project.description || '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project?.id]);
+
+  useEffect(() => {
+    if (project && !editingDueDate) {
+      setDueDateValue(project.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project?.id]);
+
+  // Inline edit handlers
+  const handleNameSave = async () => {
+    if (!nameValue.trim() || nameValue === project?.name) {
+      setEditingName(false);
+      return;
+    }
+
+    if (nameValue.trim().length < 3) {
+      toast.error('Project name must be at least 3 characters');
+      setNameValue(project?.name || '');
+      setEditingName(false);
+      return;
+    }
+
+    try {
+      await updateProject.mutateAsync({
+        id: projectId!,
+        name: nameValue.trim(),
+        userId: user!.uid,
+      });
+      toast.success('Project name updated');
+      setEditingName(false);
+    } catch (err) {
+      console.error('Failed to update name:', err);
+      toast.error('Failed to update project name');
+      setNameValue(project?.name || '');
+      setEditingName(false);
+    }
+  };
+
+  const handleDescriptionSave = async () => {
+    if (descriptionValue === project?.description) {
+      setEditingDescription(false);
+      return;
+    }
+
+    try {
+      await updateProject.mutateAsync({
+        id: projectId!,
+        description: descriptionValue.trim(),
+        userId: user!.uid,
+      });
+      toast.success('Description updated');
+      setEditingDescription(false);
+    } catch (err) {
+      console.error('Failed to update description:', err);
+      toast.error('Failed to update description');
+      setDescriptionValue(project?.description || '');
+      setEditingDescription(false);
+    }
+  };
+
+  const handleDueDateSave = async () => {
+    if (!dueDateValue) {
+      toast.error('Due date is required');
+      setDueDateValue(project?.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '');
+      setEditingDueDate(false);
+      return;
+    }
+
+    const currentDateStr = project?.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '';
+    if (dueDateValue === currentDateStr) {
+      setEditingDueDate(false);
+      return;
+    }
+
+    const selectedDate = new Date(dueDateValue);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (selectedDate < today) {
+      toast.error('Due date cannot be in the past');
+      setDueDateValue(currentDateStr);
+      setEditingDueDate(false);
+      return;
+    }
+
+    try {
+      await updateProject.mutateAsync({
+        id: projectId!,
+        dueDate: Timestamp.fromDate(dateStringToLocalDate(dueDateValue)),
+        userId: user!.uid,
+      });
+      toast.success('Due date updated');
+      setEditingDueDate(false);
+    } catch (err) {
+      console.error('Failed to update due date:', err);
+      toast.error('Failed to update due date');
+      setDueDateValue(currentDateStr);
+      setEditingDueDate(false);
+    }
+  };
 
   // Quick Task Form
   const { register: registerTask, handleSubmit: handleTaskSubmit, formState: { errors: taskErrors, isSubmitting: taskSubmitting }, reset: resetTask } = useForm<QuickTaskFormData>({
@@ -118,39 +225,6 @@ export const ProjectDetail: FC = () => {
       dueDate: format(new Date(), 'yyyy-MM-dd'),
     },
   });
-
-  // Update project form when project loads - use useEffect to avoid infinite loop
-  useEffect(() => {
-    if (project) {
-      resetProject({
-        name: project.name,
-        description: project.description || '',
-        dueDate: project.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '',
-        status: project.status,
-      });
-    }
-  }, [project, resetProject]);
-
-  const onProjectSubmit = async (data: ProjectFormData) => {
-    if (!projectId) return;
-
-    try {
-      await updateProject.mutateAsync({
-        id: projectId,
-        name: data.name,
-        description: data.description?.trim() || '', // Send empty string to clear field
-        dueDate: Timestamp.fromDate(dateStringToLocalDate(data.dueDate)),
-        status: data.status,
-        userId: user!.uid,
-      });
-
-      toast.success('Project updated successfully!');
-      setIsEditing(false);
-    } catch (err) {
-      console.error('Failed to update project:', err);
-      toast.error('Failed to update project. Please try again.');
-    }
-  };
 
   const onTaskSubmit = async (data: QuickTaskFormData) => {
     if (!projectId || !user) return;
@@ -199,13 +273,8 @@ export const ProjectDetail: FC = () => {
     }
   };
 
-  const handleCancel = () => {
-    setIsEditing(false);
-    resetProject();
-  };
-
   const handleTaskClick = (taskId: string) => {
-    navigate('/projects');
+    navigate(`/tasks/${taskId}`);
   };
 
   // Loading state
@@ -245,11 +314,57 @@ export const ProjectDetail: FC = () => {
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.headerContent}>
-            <h1 className={styles.title}>{isEditing ? 'Edit Project' : project.name}</h1>
+            {editingName ? (
+              <input
+                className={`${styles.title} ${styles.titleInput}`}
+                value={nameValue}
+                onChange={(e) => setNameValue(e.target.value)}
+                onBlur={handleNameSave}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleNameSave();
+                  }
+                  if (e.key === 'Escape') {
+                    setNameValue(project.name);
+                    setEditingName(false);
+                  }
+                }}
+                autoFocus
+              />
+            ) : (
+              <h1
+                className={`${styles.title} ${styles.editable}`}
+                onClick={() => setEditingName(true)}
+              >
+                {project.name}
+              </h1>
+            )}
             <div className={styles.metadata}>
-              <span className={styles.dueDate}>
-                <FiCalendar /> Due {format(toDate(project.dueDate), 'MMM dd, yyyy')}
-              </span>
+              {editingDueDate ? (
+                <input
+                  type="date"
+                  className={styles.dateInput}
+                  value={dueDateValue}
+                  onChange={(e) => setDueDateValue(e.target.value)}
+                  onBlur={handleDueDateSave}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleDueDateSave();
+                    }
+                    if (e.key === 'Escape') {
+                      setDueDateValue(project.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '');
+                      setEditingDueDate(false);
+                    }
+                  }}
+                  autoFocus
+                />
+              ) : (
+                <span className={`${styles.dueDate} ${styles.editable}`} onClick={() => setEditingDueDate(true)}>
+                  <FiCalendar /> Due {format(toDate(project.dueDate), 'MMM dd, yyyy')}
+                </span>
+              )}
               <ProjectStatusDropdown
                 currentStatus={project.status}
                 onStatusChange={handleProjectStatusChange}
@@ -261,139 +376,62 @@ export const ProjectDetail: FC = () => {
             </div>
           </div>
           
-          {!isEditing && (
-            <div className={styles.headerActions}>
-              <Button
-                variant="secondary"
-                size="small"
-                onClick={() => setIsEditing(true)}
-              >
-                <FiEdit2 /> Edit
-              </Button>
-              <Button
-                variant="ghost"
-                size="small"
-                onClick={handleDelete}
-              >
-                <FiTrash2 /> Delete
-              </Button>
-            </div>
-          )}
+          <div className={styles.headerActions}>
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={handleDelete}
+            >
+              <FiTrash2 /> Delete
+            </Button>
+          </div>
         </div>
 
         {/* Project Details */}
         <Card variant="elevated" padding="large" className={styles.detailsCard}>
-          {isEditing ? (
-            // Edit Mode
-            <form onSubmit={handleProjectSubmit(onProjectSubmit)} className={styles.form}>
-              {/* Name */}
-              <div className={styles.formGroup}>
-                <label htmlFor="name" className={styles.label}>
-                  Project Name <span className={styles.required}>*</span>
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  className={styles.input}
-                  {...registerProject('name', {
-                    required: 'Project name is required',
-                    minLength: { value: 3, message: 'Name must be at least 3 characters' },
-                  })}
-                  autoFocus
-                />
-                {projectErrors.name && <span className={styles.error}>{projectErrors.name.message}</span>}
-              </div>
-
-              {/* Description */}
-              <div className={styles.formGroup}>
-                <label htmlFor="description" className={styles.label}>
-                  Description
-                </label>
+          <div className={styles.details}>
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>Description</h3>
+              {editingDescription ? (
                 <textarea
-                  id="description"
-                  className={styles.textarea}
-                  rows={4}
-                  {...registerProject('description')}
+                  className={styles.descriptionInput}
+                  value={descriptionValue}
+                  onChange={(e) => setDescriptionValue(e.target.value)}
+                  onBlur={handleDescriptionSave}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setDescriptionValue(project.description || '');
+                      setEditingDescription(false);
+                    }
+                  }}
+                  autoFocus
                   placeholder="Add project goals, scope, or important notes..."
+                  rows={4}
                 />
-              </div>
-
-              {/* Due Date & Status */}
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label htmlFor="dueDate" className={styles.label}>
-                    Due Date <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    id="dueDate"
-                    type="date"
-                    className={styles.input}
-                    {...registerProject('dueDate', {
-                      required: 'Due date is required',
-                      validate: value => {
-                        const selected = new Date(value);
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        return selected >= today || 'Due date cannot be in the past';
-                      },
-                    })}
-                  />
-                  {projectErrors.dueDate && <span className={styles.error}>{projectErrors.dueDate.message}</span>}
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label htmlFor="status" className={styles.label}>
-                    Status <span className={styles.required}>*</span>
-                  </label>
-                  <select
-                    id="status"
-                    className={styles.select}
-                    {...registerProject('status', { required: 'Status is required' })}
-                  >
-                    <option value="active">Active</option>
-                    <option value="on hold">On Hold</option>
-                    <option value="completed">Completed</option>
-                    <option value="archived">Archived</option>
-                  </select>
-                  {projectErrors.status && <span className={styles.error}>{projectErrors.status.message}</span>}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className={styles.formActions}>
-                <Button type="button" variant="secondary" onClick={handleCancel}>
-                  <FiX /> Cancel
-                </Button>
-                <Button type="submit" variant="primary" loading={projectSubmitting}>
-                  <FiSave /> Save Changes
-                </Button>
-              </div>
-            </form>
-          ) : (
-            // Read Mode
-            <div className={styles.details}>
-              {project.description && (
-                <div className={styles.section}>
-                  <h3 className={styles.sectionTitle}>Description</h3>
-                  <p className={styles.description}>{project.description}</p>
-                </div>
+              ) : (
+                <p
+                  className={`${styles.description} ${project.description ? styles.editable : styles.descriptionPlaceholder}`}
+                  onClick={() => setEditingDescription(true)}
+                >
+                  {project.description || 'Click to add description...'}
+                </p>
               )}
+            </div>
 
-              <div className={styles.section}>
-                <h3 className={styles.sectionTitle}>Metadata</h3>
-                <div className={styles.timestamps}>
-                  <p>
-                    <strong>Created:</strong>{' '}
-                    {project.createdAt && format(toDate(project.createdAt), 'MMM dd, yyyy h:mm a')}
-                  </p>
-                  <p>
-                    <strong>Last Updated:</strong>{' '}
-                    {project.updatedAt && format(toDate(project.updatedAt), 'MMM dd, yyyy h:mm a')}
-                  </p>
-                </div>
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>Metadata</h3>
+              <div className={styles.timestamps}>
+                <p>
+                  <strong>Created:</strong>{' '}
+                  {project.createdAt && format(toDate(project.createdAt), 'MMM dd, yyyy h:mm a')}
+                </p>
+                <p>
+                  <strong>Last Updated:</strong>{' '}
+                  {project.updatedAt && format(toDate(project.updatedAt), 'MMM dd, yyyy h:mm a')}
+                </p>
               </div>
             </div>
-          )}
+          </div>
         </Card>
 
         {/* Tasks Section */}

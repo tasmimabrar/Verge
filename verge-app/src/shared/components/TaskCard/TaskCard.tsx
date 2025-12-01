@@ -177,9 +177,9 @@ export const TaskCard = ({
           </div>
         </div>
         
-        <p className={task.notes ? styles.notes : styles.noDescription}>
+        <p className={task.notes ? styles.description : styles.noDescription}>
           {task.notes 
-            ? (task.notes.length > 180 ? `${task.notes.substring(0, 180)}...` : task.notes)
+            ? (task.notes.length > 30 ? `${task.notes.substring(0, 30)}...` : task.notes)
             : 'No Description'
           }
         </p>

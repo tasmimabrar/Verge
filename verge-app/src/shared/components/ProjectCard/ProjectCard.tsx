@@ -153,7 +153,7 @@ export const ProjectCard = ({
           </div>
           <p className={project.description ? styles.description : styles.noDescription}>
             {project.description 
-              ? (project.description.length > 180 ? `${project.description.substring(0, 180)}...` : project.description)
+              ? (project.description.length > 30 ? `${project.description.substring(0, 30)}...` : project.description)
               : 'No Description'
             }
           </p>

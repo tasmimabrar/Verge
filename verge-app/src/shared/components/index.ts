@@ -28,6 +28,12 @@ export type { DropdownProps } from './Dropdown';
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 
+export { SubtaskList } from './SubtaskList';
+export type { SubtaskListProps } from './SubtaskList';
+
+export { TaskStatusDropdown } from './TaskStatusDropdown';
+export type { TaskStatusDropdownProps } from './TaskStatusDropdown';
+
 // Domain-specific components
 export { TaskCard } from './TaskCard';
 export type { TaskCardProps } from './TaskCard';

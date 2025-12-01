@@ -1,10 +1,12 @@
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { FiArrowRight, FiCheckCircle } from 'react-icons/fi';
 import { Card, Loader, EmptyState, TaskCard } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { useTodayTasks } from '@/shared/hooks/useTasks';
+import { useTodayTasks, useUpdateTask } from '@/shared/hooks/useTasks';
 import { useProjects } from '@/shared/hooks/useProjects';
+import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
 import styles from './TodaysPriorities.module.css';
 
 /**
@@ -25,12 +27,27 @@ export const TodaysPriorities: FC = () => {
   const { user } = useAuth();
   const { data: tasks, isLoading, error } = useTodayTasks(user?.uid || '');
   const { data: projects } = useProjects(user?.uid || '');
+  const updateTask = useUpdateTask();
   
   /**
    * Get project name by ID
    */
   const getProjectName = (projectId: string): string | undefined => {
     return projects?.find(p => p.id === projectId)?.name;
+  };
+
+  const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        status: newStatus,
+        userId: user!.uid,
+      });
+      toast.success(`Task status changed to ${newStatus.replace('_', ' ')}`);
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      toast.error('Failed to update task status');
+    }
   };
 
   // Sort by priority (high → medium → low)
@@ -88,6 +105,7 @@ export const TodaysPriorities: FC = () => {
                 variant="preview"
                 projectName={getProjectName(task.projectId)}
                 onClick={() => handleTaskClick(task.id)}
+                onStatusChange={handleStatusChange}
               />
             ))}
           </div>

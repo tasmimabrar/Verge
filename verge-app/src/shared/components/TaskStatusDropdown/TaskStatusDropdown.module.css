@@ -1,0 +1,227 @@
+/* TaskStatusDropdown.module.css */
+
+.container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Size variants */
+.small {
+  font-size: var(--font-size-sm);
+}
+
+.medium {
+  font-size: var(--font-size-base);
+}
+
+.large {
+  font-size: var(--font-size-lg);
+}
+
+/* Trigger Button (Checkbox) */
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-tertiary);
+  transition: all var(--transition-base);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+}
+
+.trigger:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-primary);
+  transform: scale(1.1);
+}
+
+.trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.trigger.active {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.trigger.done {
+  color: var(--color-success);
+}
+
+.trigger.done:hover {
+  color: var(--color-success);
+}
+
+.triggerIcon {
+  font-size: 20px;
+}
+
+/* Dropdown Menu */
+.dropdown {
+  position: fixed;
+  min-width: 260px;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  animation: dropdownSlideIn 0.2s ease-out;
+  overflow: hidden;
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdownHeader {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+}
+
+.dropdownTitle {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Options List */
+.optionsList {
+  list-style: none;
+  margin: 0;
+  padding: var(--spacing-xs);
+}
+
+.optionButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  text-align: left;
+}
+
+.optionButton:hover {
+  background: var(--color-bg-hover);
+}
+
+.optionButton.selected {
+  background: var(--color-primary-light);
+}
+
+.optionIcon {
+  font-size: 18px;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.optionButton:hover .optionIcon {
+  color: var(--color-primary);
+}
+
+.optionButton.selected .optionIcon {
+  color: var(--color-primary);
+}
+
+/* Special colors for each status */
+.optionButton:nth-child(1) .optionIcon {
+  /* To Do - default gray */
+  color: var(--color-text-tertiary);
+}
+
+.optionButton:nth-child(1):hover {
+  background: rgba(156, 163, 175, 0.1); /* Light gray */
+}
+
+.optionButton:nth-child(2) .optionIcon {
+  /* In Progress - blue */
+  color: #3b82f6;
+}
+
+.optionButton:nth-child(2):hover {
+  background: rgba(59, 130, 246, 0.1); /* Light blue */
+}
+
+.optionButton:nth-child(3) .optionIcon {
+  /* Done - green */
+  color: var(--color-success);
+}
+
+.optionButton:nth-child(3):hover {
+  background: rgba(34, 197, 94, 0.1); /* Light green */
+}
+
+.optionButton:nth-child(4) .optionIcon {
+  /* Postponed - orange */
+  color: var(--color-warning);
+}
+
+.optionButton:nth-child(4):hover {
+  background: rgba(251, 146, 60, 0.1); /* Light orange */
+}
+
+.optionContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.optionLabel {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.optionDescription {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.checkmark {
+  font-size: 16px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dropdown {
+    min-width: 240px;
+  }
+
+  .optionButton {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .dropdown {
+    animation: none;
+  }
+
+  .trigger:hover {
+    transform: none;
+  }
+}

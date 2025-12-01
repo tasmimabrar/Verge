@@ -10,7 +10,8 @@ import { toDate, dateStringToLocalDate } from '@/shared/utils/dateHelpers';
 import { AppLayout, Card, Button, Loader, EmptyState, Badge, TaskCard } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useProject, useUpdateProject, useDeleteProject } from '@/shared/hooks/useProjects';
-import { useProjectTasks, useCreateTask } from '@/shared/hooks/useTasks';
+import { useProjectTasks, useCreateTask, useUpdateTask } from '@/shared/hooks/useTasks';
+import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
 import styles from './ProjectDetail.module.css';
 
 interface ProjectFormData {
@@ -52,6 +53,21 @@ export const ProjectDetail: FC = () => {
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
   const createTask = useCreateTask();
+  const updateTask = useUpdateTask();
+
+  const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        status: newStatus,
+        userId: user!.uid,
+      });
+      toast.success(`Task status changed to ${newStatus.replace('_', ' ')}`);
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      toast.error('Failed to update task status');
+    }
+  };
 
   // Project Form
   const { register: registerProject, handleSubmit: handleProjectSubmit, formState: { errors: projectErrors, isSubmitting: projectSubmitting }, reset: resetProject } = useForm<ProjectFormData>({
@@ -436,6 +452,7 @@ export const ProjectDetail: FC = () => {
                   task={task}
                   variant="preview"
                   onClick={() => handleTaskClick(task.id)}
+                  onStatusChange={handleStatusChange}
                 />
               ))}
             </div>

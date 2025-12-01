@@ -1,13 +1,15 @@
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { FiArrowRight, FiCalendar } from 'react-icons/fi';
 import { format, isToday, isTomorrow, isThisWeek } from 'date-fns';
 import type { Task } from '@/shared/types';
 import { toDate } from '@/shared/utils/dateHelpers';
 import { Card, Loader, EmptyState, TaskCard } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { useUpcomingTasks } from '@/shared/hooks/useTasks';
+import { useUpcomingTasks, useUpdateTask } from '@/shared/hooks/useTasks';
 import { useProjects } from '@/shared/hooks/useProjects';
+import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
 import styles from './UpcomingDeadlines.module.css';
 
 /**
@@ -28,12 +30,27 @@ export const UpcomingDeadlines: FC = () => {
   const { user } = useAuth();
   const { data: tasks, isLoading, error } = useUpcomingTasks(user?.uid || '', 7);
   const { data: projects } = useProjects(user?.uid || '');
+  const updateTask = useUpdateTask();
   
   /**
    * Get project name by ID
    */
   const getProjectName = (projectId: string): string | undefined => {
     return projects?.find(p => p.id === projectId)?.name;
+  };
+
+  const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        status: newStatus,
+        userId: user!.uid,
+      });
+      toast.success(`Task status changed to ${newStatus.replace('_', ' ')}`);
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      toast.error('Failed to update task status');
+    }
   };
 
   /**
@@ -123,6 +140,7 @@ export const UpcomingDeadlines: FC = () => {
                       variant="preview"
                       projectName={getProjectName(task.projectId)}
                       onClick={() => handleTaskClick(task.id)}
+                      onStatusChange={handleStatusChange}
                     />
                   ))}
                 </div>

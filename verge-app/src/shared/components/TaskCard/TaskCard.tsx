@@ -14,8 +14,9 @@
 import { format, isToday, isTomorrow, isPast } from 'date-fns';
 import { FiCalendar, FiFolder, FiCheckSquare } from 'react-icons/fi';
 import { toDate } from '@/shared/utils/dateHelpers';
-import { Card, Badge } from '@/shared/components';
+import { Card, Badge, TaskStatusDropdown } from '@/shared/components';
 import type { Task } from '@/shared/types';
+import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
 import styles from './TaskCard.module.css';
 
 export interface TaskCardProps {
@@ -30,6 +31,9 @@ export interface TaskCardProps {
   
   /** Click handler (typically for navigation) */
   onClick?: (task: Task) => void;
+  
+  /** Status change handler (optional - enables status dropdown) */
+  onStatusChange?: (taskId: string, newStatus: TaskStatus) => void;
   
   /** Additional CSS classes */
   className?: string;
@@ -64,16 +68,6 @@ const getPriorityVariant = (priority: string): 'priority-low' | 'priority-medium
 };
 
 /**
- * Get status badge variant from task status
- */
-const getStatusVariant = (status: string): 'status-todo' | 'status-in-progress' | 'status-done' | 'status-postponed' => {
-  if (status === 'in_progress') return 'status-in-progress';
-  if (status === 'done') return 'status-done';
-  if (status === 'postponed') return 'status-postponed';
-  return 'status-todo';
-};
-
-/**
  * TaskCard component for displaying tasks
  * 
  * @example
@@ -93,6 +87,7 @@ export const TaskCard = ({
   variant = 'preview',
   projectName,
   onClick,
+  onStatusChange,
   className = '',
 }: TaskCardProps) => {
   // Handle both Timestamp and Date objects using helper
@@ -102,6 +97,13 @@ export const TaskCard = ({
   const handleClick = () => {
     if (onClick) {
       onClick(task);
+    }
+  };
+
+  const handleStatusChange = (newStatus: TaskStatus) => {
+    if (onStatusChange) {
+      // Prevent click propagation when changing status
+      onStatusChange(task.id, newStatus);
     }
   };
   
@@ -115,7 +117,16 @@ export const TaskCard = ({
       >
         <div className={styles.previewContent}>
           <div className={styles.header}>
-            <h4 className={styles.title}>{task.title}</h4>
+            <div className={styles.titleRow}>
+              {onStatusChange && (
+                <TaskStatusDropdown
+                  currentStatus={task.status}
+                  onStatusChange={handleStatusChange}
+                  size="small"
+                />
+              )}
+              <h4 className={styles.title}>{task.title}</h4>
+            </div>
             <Badge variant={getPriorityVariant(task.priority)} size="sm">
               {task.priority}
             </Badge>
@@ -150,13 +161,17 @@ export const TaskCard = ({
       <div className={styles.fullContent}>
         <div className={styles.header}>
           <div className={styles.titleRow}>
+            {onStatusChange && (
+              <TaskStatusDropdown
+                currentStatus={task.status}
+                onStatusChange={handleStatusChange}
+                size="medium"
+              />
+            )}
             <h3 className={styles.title}>{task.title}</h3>
             <div className={styles.badges}>
               <Badge variant={getPriorityVariant(task.priority)} size="md">
                 {task.priority}
-              </Badge>
-              <Badge variant={getStatusVariant(task.status)} size="md">
-                {task.status.replace('_', ' ')}
               </Badge>
             </div>
           </div>

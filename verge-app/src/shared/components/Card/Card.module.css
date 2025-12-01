@@ -51,16 +51,18 @@
 .interactive {
   cursor: pointer;
   user-select: none;
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .interactive:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  /* Subtle hover effects without movement */
+  background-color: var(--color-bg-secondary);
+  box-shadow: var(--shadow-md);
 }
 
 .interactive:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-md);
+  background-color: var(--color-bg-tertiary);
+  box-shadow: var(--shadow-sm);
 }
 
 .interactive:focus-visible {
@@ -70,7 +72,7 @@
 
 /* Smooth hover on elevated variant */
 .elevated.interactive:hover {
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Outline variant hover */

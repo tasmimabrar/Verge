@@ -1,15 +1,32 @@
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { FiAlertCircle, FiArrowRight } from 'react-icons/fi';
 import { Card, EmptyState, Loader, TaskCard } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { useOverdueTasks } from '@/shared/hooks/useTasks';
+import { useOverdueTasks, useUpdateTask } from '@/shared/hooks/useTasks';
+import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
 import styles from './OverdueTasks.module.css';
 
 export const OverdueTasks: FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: tasks, isLoading, error } = useOverdueTasks(user?.uid || '');
+  const updateTask = useUpdateTask();
+
+  const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        status: newStatus,
+        userId: user!.uid,
+      });
+      toast.success(`Task status changed to ${newStatus.replace('_', ' ')}`);
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      toast.error('Failed to update task status');
+    }
+  };
 
   const handleViewAll = () => {
     navigate('/tasks?status=overdue');
@@ -47,6 +64,7 @@ export const OverdueTasks: FC = () => {
                   task={task}
                   variant="preview"
                   onClick={() => navigate(`/tasks/${task.id}`)}
+                  onStatusChange={handleStatusChange}
                 />
               ))}
             </div>

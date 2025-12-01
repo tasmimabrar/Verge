@@ -6,17 +6,21 @@
  */
 
 .taskCard {
-  transition: all 0.2s ease;
+  transition: box-shadow 0.2s ease;
+}
+
+.clickable {
+  cursor: pointer;
 }
 
 .taskCard:hover {
-  transform: translateY(-2px);
+  /* Removed transform to prevent dropdown positioning issues */
   box-shadow: var(--shadow-lg);
 }
 
 /* Preview Variant (Compact for Dashboard/Lists) */
 .preview {
-  cursor: pointer;
+  /* Cursor set by clickable class */
 }
 
 .previewContent {
@@ -30,6 +34,13 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--spacing-md);
+}
+
+.preview .titleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
 }
 
 .preview .title {
@@ -78,6 +89,12 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.full .titleRow {
+  display: flex;
+  align-items: center;
   gap: var(--spacing-md);
 }
 

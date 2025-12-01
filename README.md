@@ -98,5 +98,5 @@ For questions or support, please open an issue on GitHub or contact the maintain
 | Abdellatif Osman |  |  |
 | Brandon D'sa |  |  |
 | Joys James | 100866455 | [Joys](https://github.com/JoysJ) |
-| Mohammad tasmim Abrar |  |  |
+| Mohammad tasmim Abrar | 100820649 | [Mohammad](https://github.com/tasmimabrar) |
 | Vithuran Kankatharan |  |  |

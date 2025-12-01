@@ -1,13 +1,15 @@
 import type { FC, ChangeEvent } from 'react';
 import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { FiPlus, FiSearch, FiFilter, FiList } from 'react-icons/fi';
 import { Button, Card, Loader, EmptyState, TaskCard, AppLayout } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { useTasks } from '@/shared/hooks/useTasks';
+import { useTasks, useUpdateTask } from '@/shared/hooks/useTasks';
 import { useProjects } from '@/shared/hooks/useProjects';
 import { toDate } from '@/shared/utils/dateHelpers';
-import type { TaskStatus, TaskPriority } from '@/shared/types';
+import type { TaskStatus as TaskStatusType, TaskPriority } from '@/shared/types';
+import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
 import styles from './TasksList.module.css';
 
 /**
@@ -29,7 +31,7 @@ export const TasksList: FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Get filter/sort values from URL query params  
-  const statusFilter = (searchParams.get('status') || 'all') as TaskStatus | 'all';
+  const statusFilter = (searchParams.get('status') || 'all') as TaskStatusType | 'all';
   const priorityFilter = (searchParams.get('priority') || 'all') as TaskPriority | 'all';
   const projectFilter = searchParams.get('project') || 'all';
   const sortBy = searchParams.get('sort') || 'dueDate';
@@ -41,8 +43,23 @@ export const TasksList: FC = () => {
   // Fetch data
   const { data: allTasks, isLoading: tasksLoading } = useTasks(user?.uid || '');
   const { data: projects, isLoading: projectsLoading } = useProjects(user?.uid || '');
+  const updateTask = useUpdateTask();
   
   const isLoading = tasksLoading || projectsLoading;
+
+  const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        status: newStatus,
+        userId: user!.uid,
+      });
+      toast.success(`Task status changed to ${newStatus.replace('_', ' ')}`);
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      toast.error('Failed to update task status');
+    }
+  };
   
   /**
    * Update URL query param for filters/sorting
@@ -299,6 +316,7 @@ export const TasksList: FC = () => {
                 variant="full"
                 projectName={getProjectName(task.projectId)}
                 onClick={() => handleTaskClick(task.id)}
+                onStatusChange={handleStatusChange}
               />
             ))}
           </div>

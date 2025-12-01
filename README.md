@@ -96,7 +96,7 @@ For questions or support, please open an issue on GitHub or contact the maintain
 | Name | Student ID | GitHub URL|
 | :------------------------:|:------------------------:|:--------------------------------------:|
 | Abdellatif Osman |  |  |
-| Brandon D'sa |  |  |
+| Brandon D'sa | 100926532 |  |
 | Joys James | 100866455 | [Joys](https://github.com/JoysJ) |
 | Mohammad tasmim Abrar | 100820649 | [Mohammad](https://github.com/tasmimabrar) |
 | Vithuran Kankatharan |  |  |

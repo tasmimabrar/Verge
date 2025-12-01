@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { Timestamp } from 'firebase/firestore';
-import { format } from 'date-fns';
+import { format, subDays, subWeeks, subMonths } from 'date-fns';
 import { toast } from 'sonner';
 import { FiEdit2, FiTrash2, FiSave, FiX, FiCalendar, FiTag, FiAlertCircle, FiStar } from 'react-icons/fi';
 import { toDate, dateStringToLocalDate } from '@/shared/utils/dateHelpers';
@@ -13,7 +13,7 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { useTask, useUpdateTask, useDeleteTask } from '@/shared/hooks/useTasks';
 import { useProjects } from '@/shared/hooks/useProjects';
 import { getUserSettings } from '@/lib/firebase/firestore';
-import type { Subtask, UserSettings } from '@/shared/types';
+import type { Subtask, UserSettings, TaskReminder } from '@/shared/types';
 import type { TaskStatus } from '@/shared/components/TaskStatusDropdown';
 import styles from './TaskDetail.module.css';
 
@@ -25,6 +25,9 @@ interface TaskFormData {
   projectId: string;
   tags: string;
   status: 'todo' | 'in_progress' | 'done' | 'postponed';
+  reminderEnabled: boolean;
+  reminderAmount: number;
+  reminderUnit: 'day' | 'week' | 'month';
 }
 
 /**
@@ -45,6 +48,7 @@ export const TaskDetail: FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
   const [isAIAssistOpen, setIsAIAssistOpen] = useState(false);
+  const [showReminderFields, setShowReminderFields] = useState(false);
 
   // Queries
   const { data: task, isLoading, error } = useTask(taskId);
@@ -78,12 +82,17 @@ export const TaskDetail: FC = () => {
       projectId: '',
       tags: '',
       status: 'todo',
+      reminderEnabled: false,
+      reminderAmount: 1,
+      reminderUnit: 'day',
     },
   });
 
   // Update form when task loads - use useEffect to avoid infinite loop
   useEffect(() => {
     if (task) {
+      const hasReminder = task.reminder?.enabled || false;
+      
       reset({
         title: task.title,
         notes: task.notes || '',
@@ -92,6 +101,9 @@ export const TaskDetail: FC = () => {
         projectId: task.projectId,
         tags: task.tags?.join(', ') || '',
         status: task.status,
+        reminderEnabled: hasReminder,
+        reminderAmount: task.reminder?.amount || 1,
+        reminderUnit: task.reminder?.unit || 'day',
       });
     }
   }, [task, reset]);
@@ -104,6 +116,32 @@ export const TaskDetail: FC = () => {
         ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean)
         : [];
 
+      // Calculate reminder date if enabled
+      let reminder: TaskReminder | undefined;
+      if (data.reminderEnabled && data.reminderAmount > 0) {
+        const dueDate = dateStringToLocalDate(data.dueDate);
+        let reminderDate: Date;
+        
+        switch (data.reminderUnit) {
+          case 'day':
+            reminderDate = subDays(dueDate, data.reminderAmount);
+            break;
+          case 'week':
+            reminderDate = subWeeks(dueDate, data.reminderAmount);
+            break;
+          case 'month':
+            reminderDate = subMonths(dueDate, data.reminderAmount);
+            break;
+        }
+        
+        reminder = {
+          enabled: true,
+          amount: data.reminderAmount,
+          unit: data.reminderUnit,
+          reminderDate: Timestamp.fromDate(reminderDate),
+        };
+      }
+
       await updateTask.mutateAsync({
         id: taskId,
         title: data.title,
@@ -114,6 +152,7 @@ export const TaskDetail: FC = () => {
         tags: tags.length > 0 ? tags : [], // Send empty array to clear tags
         status: data.status,
         userId: user!.uid,
+        ...(reminder && { reminder }), // Only include reminder if it exists
       });
 
       toast.success('Task updated successfully!');
@@ -622,6 +661,52 @@ export const TaskDetail: FC = () => {
                   {...register('tags')}
                   placeholder="e.g. urgent, backend, bug-fix (comma-separated)"
                 />
+              </div>
+
+              {/* Reminder */}
+              <div className={styles.formGroup}>
+                <div className={styles.checkboxWrapper}>
+                  <input
+                    id="reminderEnabled"
+                    type="checkbox"
+                    className={styles.checkbox}
+                    {...register('reminderEnabled')}
+                    onChange={(e) => setShowReminderFields(e.target.checked)}
+                  />
+                  <label htmlFor="reminderEnabled" className={styles.checkboxLabel}>
+                    Set a reminder for this task
+                  </label>
+                </div>
+                
+                {showReminderFields && (
+                  <div className={styles.reminderFields}>
+                    <span className={styles.reminderLabel}>Remind me</span>
+                    <input
+                      id="reminderAmount"
+                      type="number"
+                      min="1"
+                      max="365"
+                      className={styles.reminderInput}
+                      {...register('reminderAmount', {
+                        valueAsNumber: true,
+                        min: { value: 1, message: 'Must be at least 1' },
+                      })}
+                    />
+                    <select
+                      id="reminderUnit"
+                      className={styles.reminderSelect}
+                      {...register('reminderUnit')}
+                    >
+                      <option value="day">day(s)</option>
+                      <option value="week">week(s)</option>
+                      <option value="month">month(s)</option>
+                    </select>
+                    <span className={styles.reminderLabel}>before due date</span>
+                  </div>
+                )}
+                {errors.reminderAmount && showReminderFields && (
+                  <span className={styles.error}>{errors.reminderAmount.message}</span>
+                )}
               </div>
 
               {/* Actions */}

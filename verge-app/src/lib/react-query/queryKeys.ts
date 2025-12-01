@@ -42,4 +42,12 @@ export const queryKeys = {
     upcomingDeadlines: (userId: string) => ['dashboard', 'upcoming-deadlines', userId] as const,
     overdueTasks: (userId: string) => ['dashboard', 'overdue-tasks', userId] as const,
   },
+  
+  // Notification queries
+  notifications: {
+    all: ['notifications'] as const,
+    lists: () => ['notifications', 'list'] as const,
+    list: (userId: string) => ['notifications', 'list', userId] as const,
+    unread: (userId: string) => ['notifications', 'unread', userId] as const,
+  },
 } as const;

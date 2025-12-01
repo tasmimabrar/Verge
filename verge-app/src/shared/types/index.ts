@@ -173,6 +173,58 @@ export interface Subtask {
 }
 
 /**
+ * Task reminder configuration
+ */
+export interface TaskReminder {
+  /** Whether reminder is enabled */
+  enabled: boolean;
+  
+  /** Number of time units before due date */
+  amount: number;
+  
+  /** Time unit (day, week, month) */
+  unit: 'day' | 'week' | 'month';
+  
+  /** Calculated reminder timestamp (when to send notification) */
+  reminderDate?: Timestamp;
+}
+
+/**
+ * Notification for user
+ */
+export interface Notification {
+  /** Firestore document ID */
+  id: string;
+  
+  /** User ID */
+  userId: string;
+  
+  /** Notification type */
+  type: 'reminder' | 'overdue' | 'conflict' | 'summary';
+  
+  /** Notification title */
+  title: string;
+  
+  /** Notification message */
+  message: string;
+  
+  /** Related task ID (if applicable) */
+  taskId?: string;
+  
+  /** Related project ID (if applicable) */
+  projectId?: string;
+  
+  /** Whether notification has been read */
+  read: boolean;
+  
+  /** Link to navigate to when clicked */
+  link?: string;
+  
+  /** Creation timestamp */
+  createdAt: Timestamp;
+}
+
+/**
  * AI suggestion for task improvements
  */
 export interface AISuggestion {
@@ -222,6 +274,9 @@ export interface Task {
   
   /** Current task status */
   status: TaskStatus;
+  
+  /** Task reminder configuration (optional) */
+  reminder?: TaskReminder;
   
   /** List of subtasks (optional) */
   subtasks?: Subtask[];

@@ -190,6 +190,10 @@
   }
 }
 
+.notificationsWrapper {
+  position: relative;
+}
+
 .iconButton {
   position: relative;
   width: 40px;

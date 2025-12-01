@@ -33,3 +33,13 @@ export {
   useProductivityTrend,
   useFocusScore,
 } from './useDashboard';
+
+// Notification hooks
+export {
+  useNotifications,
+  useUnreadNotificationsCount,
+  useMarkNotificationAsRead,
+  useMarkAllNotificationsAsRead,
+  useDeleteNotification,
+  useCreateNotification,
+} from './useNotifications';

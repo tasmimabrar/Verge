@@ -39,8 +39,8 @@
 .navItem {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md);
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
   color: var(--color-text-secondary);
   text-decoration: none;
   border-radius: var(--border-radius-md);
@@ -60,12 +60,12 @@
 }
 
 .navIcon {
-  font-size: 20px;
+  font-size: 16px;
   flex-shrink: 0;
 }
 
 .navLabel {
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   flex: 1;
 }
 
@@ -80,9 +80,9 @@
 .sectionHeader {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-sm);
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   text-transform: uppercase;
@@ -101,20 +101,20 @@
 }
 
 .sectionChevron {
-  font-size: 14px;
+  font-size: 12px;
   flex-shrink: 0;
   transition: transform var(--transition-base);
 }
 
 .sectionIcon {
-  font-size: 14px;
+  font-size: 12px;
 }
 
 /* Quick Filters */
 .quickFilter {
-  font-size: var(--font-size-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  padding-left: calc(var(--spacing-md) + var(--spacing-lg));
+  font-size: var(--font-size-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  padding-left: calc(var(--spacing-md) + var(--spacing-md));
   position: relative;
 }
 
@@ -138,8 +138,8 @@
 .projectHeader {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
   background: none;
   border: none;
   color: var(--color-text-secondary);
@@ -160,19 +160,19 @@
 }
 
 .chevron {
-  font-size: 16px;
+  font-size: 12px;
   flex-shrink: 0;
   transition: transform var(--transition-base);
 }
 
 .projectIcon {
-  font-size: 16px;
+  font-size: 14px;
   flex-shrink: 0;
 }
 
 .projectName {
   flex: 1;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   white-space: nowrap;
   overflow: hidden;
@@ -219,12 +219,12 @@
 .taskItem {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
   color: var(--color-text-secondary);
   text-decoration: none;
   border-radius: var(--border-radius-sm);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   transition: all var(--transition-base);
   
   &:hover {
@@ -235,7 +235,7 @@
 }
 
 .taskIcon {
-  font-size: 14px;
+  font-size: 12px;
   flex-shrink: 0;
   opacity: 0.6;
   color: var(--color-text-tertiary);

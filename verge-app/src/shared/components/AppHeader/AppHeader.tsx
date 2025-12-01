@@ -12,8 +12,10 @@ import {
   FiZap
 } from 'react-icons/fi';
 import { useAuth } from '@/shared/hooks';
+import { useUnreadNotificationsCount } from '@/shared/hooks';
 import { useTheme } from '@/shared/contexts';
 import { Dropdown, ViewToggle, SearchModal } from '@/shared/components';
+import { NotificationDropdown } from '@/shared/components/NotificationDropdown';
 import { QuickActions } from '@/features/dashboard/components/QuickActions';
 import styles from './AppHeader.module.css';
 
@@ -23,6 +25,10 @@ export const AppHeader: FC = () => {
   const navigate = useNavigate();
   const [isQuickActionsOpen, setIsQuickActionsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  
+  // Get unread notifications count
+  const { data: unreadCount = 0 } = useUnreadNotificationsCount(user?.uid || '');
 
   const handleSettingsClick = () => {
     navigate('/settings');
@@ -74,10 +80,25 @@ export const AppHeader: FC = () => {
           </div>
 
           {/* Notifications */}
-          <button className={styles.iconButton}>
-            <FiBell />
-            <span className={styles.badge}>3</span>
-          </button>
+          <div className={styles.notificationsWrapper}>
+            <button 
+              className={`${styles.iconButton} ${isNotificationsOpen ? styles.active : ''}`}
+              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+              aria-label="Notifications"
+            >
+              <FiBell />
+              {unreadCount > 0 && (
+                <span className={styles.badge}>{unreadCount}</span>
+              )}
+            </button>
+            <Dropdown
+              isOpen={isNotificationsOpen}
+              onClose={() => setIsNotificationsOpen(false)}
+              align="right"
+            >
+              <NotificationDropdown onClose={() => setIsNotificationsOpen(false)} />
+            </Dropdown>
+          </div>
 
           {/* User Menu */}
           <div className={styles.userMenu}>

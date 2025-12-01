@@ -1,7 +1,9 @@
 import type { FC } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { Timestamp } from 'firebase/firestore';
+import { subDays, subWeeks, subMonths } from 'date-fns';
 import { FiX, FiSave } from 'react-icons/fi';
 import { toast } from 'sonner';
 import { AppLayout, Card, Button } from '@/shared/components';
@@ -10,6 +12,7 @@ import { useCreateTask } from '@/shared/hooks/useTasks';
 import { useProjects } from '@/shared/hooks/useProjects';
 import { dateStringToLocalDate } from '@/shared/utils/dateHelpers';
 import { TaskStatus } from '@/shared/types';
+import type { TaskReminder } from '@/shared/types';
 import styles from './NewTask.module.css';
 
 interface TaskFormData {
@@ -19,6 +22,9 @@ interface TaskFormData {
   priority: 'low' | 'medium' | 'high';
   projectId: string;
   tags: string; // Comma-separated
+  reminderEnabled: boolean;
+  reminderAmount: number;
+  reminderUnit: 'day' | 'week' | 'month';
 }
 
 /**
@@ -39,6 +45,7 @@ export const NewTask: FC = () => {
   const { user } = useAuth();
   const createTask = useCreateTask();
   const { data: projects, isLoading: projectsLoading } = useProjects(user?.uid || '');
+  const [showReminderFields, setShowReminderFields] = useState(false);
 
   const {
     register,
@@ -49,6 +56,9 @@ export const NewTask: FC = () => {
       priority: 'medium',
       notes: '',
       tags: '',
+      reminderEnabled: false,
+      reminderAmount: 1,
+      reminderUnit: 'day',
     },
   });
 
@@ -64,6 +74,32 @@ export const NewTask: FC = () => {
         ? data.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
         : [];
 
+      // Calculate reminder date if enabled
+      let reminder: TaskReminder | undefined;
+      if (data.reminderEnabled && data.reminderAmount > 0) {
+        const dueDate = dateStringToLocalDate(data.dueDate);
+        let reminderDate: Date;
+
+        switch (data.reminderUnit) {
+          case 'day':
+            reminderDate = subDays(dueDate, data.reminderAmount);
+            break;
+          case 'week':
+            reminderDate = subWeeks(dueDate, data.reminderAmount);
+            break;
+          case 'month':
+            reminderDate = subMonths(dueDate, data.reminderAmount);
+            break;
+        }
+
+        reminder = {
+          enabled: true,
+          amount: data.reminderAmount,
+          unit: data.reminderUnit,
+          reminderDate: Timestamp.fromDate(reminderDate),
+        };
+      }
+
       // Create task with Firestore Timestamp
       const newTask = await createTask.mutateAsync({
         userId: user.uid,
@@ -74,6 +110,7 @@ export const NewTask: FC = () => {
         priority: data.priority,
         status: TaskStatus.TODO,
         tags: tagArray.length > 0 ? tagArray : undefined, // Only include if has tags
+        reminder, // Include reminder if configured
         subtasks: [],
       });
 
@@ -201,6 +238,52 @@ export const NewTask: FC = () => {
                 {...register('tags')}
               />
               <span className={styles.hint}>Separate multiple tags with commas</span>
+            </div>
+
+            {/* Reminder */}
+            <div className={styles.formGroup}>
+              <div className={styles.checkboxWrapper}>
+                <input
+                  id="reminderEnabled"
+                  type="checkbox"
+                  className={styles.checkbox}
+                  {...register('reminderEnabled')}
+                  onChange={(e) => setShowReminderFields(e.target.checked)}
+                />
+                <label htmlFor="reminderEnabled" className={styles.checkboxLabel}>
+                  Set a reminder for this task
+                </label>
+              </div>
+              
+              {showReminderFields && (
+                <div className={styles.reminderFields}>
+                  <span className={styles.reminderLabel}>Remind me</span>
+                  <input
+                    id="reminderAmount"
+                    type="number"
+                    min="1"
+                    max="365"
+                    className={styles.reminderInput}
+                    {...register('reminderAmount', {
+                      valueAsNumber: true,
+                      min: { value: 1, message: 'Must be at least 1' },
+                    })}
+                  />
+                  <select
+                    id="reminderUnit"
+                    className={styles.reminderSelect}
+                    {...register('reminderUnit')}
+                  >
+                    <option value="day">day(s)</option>
+                    <option value="week">week(s)</option>
+                    <option value="month">month(s)</option>
+                  </select>
+                  <span className={styles.reminderLabel}>before due date</span>
+                </div>
+              )}
+              {errors.reminderAmount && showReminderFields && (
+                <span className={styles.error}>{errors.reminderAmount.message}</span>
+              )}
             </div>
 
             {/* Actions */}

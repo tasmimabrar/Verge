@@ -95,8 +95,8 @@ For questions or support, please open an issue on GitHub or contact the maintain
 ## Group Members:
 | Name | Student ID | GitHub URL|
 | :------------------------:|:------------------------:|:--------------------------------------:|
-| Abdellatif Osman |  |  |
-| Brandon D'sa |  |  |
+| Abdellatif Osman | 100871671 | [Abdellatif](https://github.com/osmantefo) |
+| Brandon D'sa | 100926532 | [Brandon](https://github.com/brandonn14) |
 | Joys James | 100866455 | [Joys](https://github.com/JoysJ) |
 | Mohammad tasmim Abrar | 100820649 | [Mohammad](https://github.com/tasmimabrar) |
 | Vithuran Kankatharan |  |  |

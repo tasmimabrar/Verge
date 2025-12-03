@@ -1,6 +1,7 @@
 import type { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Timestamp } from 'firebase/firestore';
 import { FiArrowRight, FiCheckCircle } from 'react-icons/fi';
 import { Card, Loader, EmptyState, TaskCard } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -65,6 +66,20 @@ export const TodaysPriorities: FC = () => {
     }
   };
 
+  const handleDueDateChange = async (taskId: string, newDueDate: Date) => {
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        dueDate: Timestamp.fromDate(newDueDate),
+        userId: user!.uid,
+      });
+      toast.success('Due date updated!');
+    } catch (err) {
+      console.error('Failed to update due date:', err);
+      toast.error('Failed to update due date');
+    }
+  };
+
   // Sort by priority (high → medium → low)
   const sortedTasks = tasks
     ?.sort((a, b) => {
@@ -122,6 +137,7 @@ export const TodaysPriorities: FC = () => {
                 onClick={() => handleTaskClick(task.id)}
                 onStatusChange={handleStatusChange}
                 onPriorityChange={handlePriorityChange}
+                onDueDateChange={handleDueDateChange}
               />
             ))}
           </div>

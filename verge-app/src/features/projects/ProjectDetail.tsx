@@ -250,6 +250,34 @@ export const ProjectDetail: FC = () => {
     }
   };
 
+  // Auto-save due date on change (like status dropdowns)
+  const handleDueDateChangeAndSave = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!project || !projectId || !e.target.value) return;
+    
+    const newDateValue = e.target.value;
+    setDueDateValue(newDateValue);
+    
+    try {
+      const [year, month, day] = newDateValue.split('-').map(Number);
+      // Create date at noon local time to avoid timezone issues
+      const newDate = new Date(year, month - 1, day, 12, 0, 0);
+      
+      await updateProject.mutateAsync({
+        id: projectId,
+        dueDate: Timestamp.fromDate(newDate),
+        userId: user!.uid,
+      });
+      
+      setEditingDueDate(false);
+      toast.success('Due date updated!');
+    } catch (err) {
+      console.error('Failed to update due date:', err);
+      toast.error('Failed to update due date');
+      // Revert on error
+      setDueDateValue(project.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '');
+    }
+  };
+
   // Quick Task Form
   const { register: registerTask, handleSubmit: handleTaskSubmit, formState: { errors: taskErrors, isSubmitting: taskSubmitting }, reset: resetTask } = useForm<QuickTaskFormData>({
     defaultValues: {
@@ -379,7 +407,7 @@ export const ProjectDetail: FC = () => {
                   type="date"
                   className={styles.dateInput}
                   value={dueDateValue}
-                  onChange={(e) => setDueDateValue(e.target.value)}
+                  onChange={handleDueDateChangeAndSave}
                   onBlur={() => handleFieldBlur('dueDate')}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {

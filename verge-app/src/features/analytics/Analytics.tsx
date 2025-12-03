@@ -199,19 +199,17 @@ export const Analytics: FC = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div className={styles.headerLeft}>
+        <div>
           <Button 
-            variant="secondary" 
-            size="medium" 
+            variant="ghost" 
+            size="small" 
             onClick={() => navigate(-1)}
             className={styles.backButton}
           >
             <FiArrowLeft /> Back
           </Button>
-          <div className={styles.headerText}>
-            <h1 className={styles.title}>Analytics</h1>
-            <p className={styles.subtitle}>Track your productivity and performance</p>
-          </div>
+          <h1 className={styles.title}>Analytics</h1>
+          <p className={styles.subtitle}>Track your productivity and performance</p>
         </div>
       </div>
 

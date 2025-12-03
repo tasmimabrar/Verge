@@ -255,6 +255,34 @@ export const TaskDetail: FC = () => {
     }
   };
 
+  // Auto-save due date on change (like status/priority dropdowns)
+  const handleDueDateChangeAndSave = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!task || !taskId || !e.target.value) return;
+    
+    const newDateValue = e.target.value;
+    setDueDateValue(newDateValue);
+    
+    try {
+      const [year, month, day] = newDateValue.split('-').map(Number);
+      // Create date at noon local time to avoid timezone issues
+      const newDate = new Date(year, month - 1, day, 12, 0, 0);
+      
+      await updateTask.mutateAsync({
+        id: taskId,
+        dueDate: Timestamp.fromDate(newDate),
+        userId: user!.uid,
+      });
+      
+      setEditingDueDate(false);
+      toast.success('Due date updated!');
+    } catch (err) {
+      console.error('Failed to update due date:', err);
+      toast.error('Failed to update due date');
+      // Revert on error
+      setDueDateValue(task.dueDate ? format(toDate(task.dueDate), 'yyyy-MM-dd') : '');
+    }
+  };
+
   const handleDelete = async () => {
     if (!taskId) return;
     
@@ -645,7 +673,7 @@ export const TaskDetail: FC = () => {
                   type="date"
                   className={styles.dateInput}
                   value={dueDateValue}
-                  onChange={(e) => setDueDateValue(e.target.value)}
+                  onChange={handleDueDateChangeAndSave}
                   onBlur={() => handleFieldBlur('dueDate')}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {

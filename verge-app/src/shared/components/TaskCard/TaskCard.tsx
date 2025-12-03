@@ -9,8 +9,10 @@
  * - Full variant: Detailed for task pages
  * - Priority badges, due date formatting
  * - Click navigation support
+ * - Inline date editing with date picker
  */
 
+import { useState } from 'react';
 import { format, isToday, isTomorrow, isPast } from 'date-fns';
 import { FiCalendar, FiFolder, FiCheckSquare } from 'react-icons/fi';
 import { toDate } from '@/shared/utils/dateHelpers';
@@ -38,6 +40,9 @@ export interface TaskCardProps {
   
   /** Priority change handler (optional - enables priority dropdown) */
   onPriorityChange?: (taskId: string, newPriority: TaskPriority) => void;
+  
+  /** Due date change handler (optional - enables date picker) */
+  onDueDateChange?: (taskId: string, newDueDate: Date) => void;
   
   /** Additional CSS classes */
   className?: string;
@@ -93,8 +98,11 @@ export const TaskCard = ({
   onClick,
   onStatusChange,
   onPriorityChange,
+  onDueDateChange,
   className = '',
 }: TaskCardProps) => {
+  const [editingDate, setEditingDate] = useState(false);
+  
   // Handle both Timestamp and Date objects using helper
   const dueDate = toDate(task.dueDate);
   const { text: dueDateText, isOverdue, isToday: isDueToday } = formatDueDate(dueDate);
@@ -117,6 +125,27 @@ export const TaskCard = ({
       // Prevent click propagation when changing priority
       onPriorityChange(task.id, newPriority);
     }
+  };
+  
+  const handleDueDateClick = (e: React.MouseEvent) => {
+    if (onDueDateChange) {
+      e.stopPropagation();
+      setEditingDate(true);
+    }
+  };
+  
+  const handleDueDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onDueDateChange && e.target.value) {
+      const [year, month, day] = e.target.value.split('-').map(Number);
+      // Create date at noon local time to avoid timezone issues
+      const newDate = new Date(year, month - 1, day, 12, 0, 0);
+      onDueDateChange(task.id, newDate);
+      setEditingDate(false);
+    }
+  };
+  
+  const handleDueDateBlur = () => {
+    setEditingDate(false);
   };
   
   if (variant === 'preview') {
@@ -153,10 +182,25 @@ export const TaskCard = ({
           </div>
           
           <div className={styles.metadata}>
-            <span className={`${styles.dueDate} ${isOverdue ? styles.overdue : ''} ${isDueToday ? styles.today : ''}`}>
-              <FiCalendar size={14} />
-              {dueDateText}
-            </span>
+            {editingDate && onDueDateChange ? (
+              <input
+                type="date"
+                className={styles.dateInput}
+                defaultValue={format(dueDate, 'yyyy-MM-dd')}
+                onChange={handleDueDateChange}
+                onBlur={handleDueDateBlur}
+                onClick={(e) => e.stopPropagation()}
+                autoFocus
+              />
+            ) : (
+              <span 
+                className={`${styles.dueDate} ${isOverdue ? styles.overdue : ''} ${isDueToday ? styles.today : ''} ${onDueDateChange ? styles.editable : ''}`}
+                onClick={handleDueDateClick}
+              >
+                <FiCalendar size={14} />
+                {dueDateText}
+              </span>
+            )}
             
             {task.subtasks && task.subtasks.length > 0 && (
               <span className={styles.subtaskCount}>
@@ -215,9 +259,24 @@ export const TaskCard = ({
         <div className={styles.details}>
           <div className={styles.detailItem}>
             <FiCalendar size={16} />
-            <span className={`${isOverdue ? styles.overdue : ''} ${isDueToday ? styles.today : ''}`}>
-              Due: {dueDateText}
-            </span>
+            {editingDate && onDueDateChange ? (
+              <input
+                type="date"
+                className={styles.dateInput}
+                defaultValue={format(dueDate, 'yyyy-MM-dd')}
+                onChange={handleDueDateChange}
+                onBlur={handleDueDateBlur}
+                onClick={(e) => e.stopPropagation()}
+                autoFocus
+              />
+            ) : (
+              <span 
+                className={`${isOverdue ? styles.overdue : ''} ${isDueToday ? styles.today : ''} ${onDueDateChange ? styles.editable : ''}`}
+                onClick={handleDueDateClick}
+              >
+                Due: {dueDateText}
+              </span>
+            )}
           </div>
           
           {task.projectId && projectName && (

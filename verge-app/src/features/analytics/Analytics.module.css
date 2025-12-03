@@ -12,12 +12,30 @@
   margin-bottom: var(--spacing-xl);
 }
 
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
 .backButton {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
-  margin-bottom: var(--spacing-md);
   font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.backButton:hover {
+  transform: translateX(-2px);
 }
 
 .title {
@@ -209,6 +227,16 @@
 @media (max-width: 768px) {
   .container {
     padding: var(--spacing-md);
+  }
+
+  .headerLeft {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+  }
+
+  .backButton {
+    align-self: flex-start;
   }
 
   .metricsGrid {

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks';
 import { useTasks, useProjects } from '@/shared/hooks';
 import { Loader, Button } from '@/shared/components';
+import { toDate } from '@/shared/utils/dateHelpers';
 import {
   LineChart,
   Line,
@@ -55,19 +56,19 @@ export const Analytics: FC = () => {
     const completedTasks = tasks.filter(t => t.status === 'done').length;
     const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
     const overdueTasks = tasks.filter(
-      t => t.status !== 'done' && t.dueDate && isAfter(now, t.dueDate.toDate())
+      t => t.status !== 'done' && t.dueDate && isAfter(now, toDate(t.dueDate))
     ).length;
     const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
     // This week's tasks
     const thisWeekTasks = tasks.filter(t =>
-      t.dueDate && isWithinInterval(t.dueDate.toDate(), { start: weekStart, end: weekEnd })
+      t.dueDate && isWithinInterval(toDate(t.dueDate), { start: weekStart, end: weekEnd })
     );
     const thisWeekCompleted = thisWeekTasks.filter(t => t.status === 'done').length;
 
     // This month's tasks
     const thisMonthTasks = tasks.filter(t =>
-      t.dueDate && isWithinInterval(t.dueDate.toDate(), { start: monthStart, end: monthEnd })
+      t.dueDate && isWithinInterval(toDate(t.dueDate), { start: monthStart, end: monthEnd })
     );
     const thisMonthCompleted = thisMonthTasks.filter(t => t.status === 'done').length;
 
@@ -88,12 +89,12 @@ export const Analytics: FC = () => {
       const completed = tasks.filter(t => 
         t.status === 'done' && 
         t.updatedAt && 
-        isWithinInterval(t.updatedAt.toDate(), { start: dayStart, end: dayEnd })
+        isWithinInterval(toDate(t.updatedAt), { start: dayStart, end: dayEnd })
       ).length;
 
       const created = tasks.filter(t =>
         t.createdAt && 
-        isWithinInterval(t.createdAt.toDate(), { start: dayStart, end: dayEnd })
+        isWithinInterval(toDate(t.createdAt), { start: dayStart, end: dayEnd })
       ).length;
 
       return {
@@ -111,7 +112,7 @@ export const Analytics: FC = () => {
       const completed = tasks.filter(t =>
         t.status === 'done' &&
         t.updatedAt &&
-        isWithinInterval(t.updatedAt.toDate(), { start: weekStart, end: weekEnd })
+        isWithinInterval(toDate(t.updatedAt), { start: weekStart, end: weekEnd })
       ).length;
 
       return {
@@ -126,7 +127,7 @@ export const Analytics: FC = () => {
       const dayEnd = new Date(day.setHours(23, 59, 59, 999));
       
       const tasksOnDay = tasks.filter(t =>
-        t.dueDate && isWithinInterval(t.dueDate.toDate(), { start: dayStart, end: dayEnd })
+        t.dueDate && isWithinInterval(toDate(t.dueDate), { start: dayStart, end: dayEnd })
       );
 
       return {
@@ -198,17 +199,19 @@ export const Analytics: FC = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div>
+        <div className={styles.headerLeft}>
           <Button 
-            variant="ghost" 
-            size="small" 
+            variant="secondary" 
+            size="medium" 
             onClick={() => navigate(-1)}
             className={styles.backButton}
           >
             <FiArrowLeft /> Back
           </Button>
-          <h1 className={styles.title}>Analytics</h1>
-          <p className={styles.subtitle}>Track your productivity and performance</p>
+          <div className={styles.headerText}>
+            <h1 className={styles.title}>Analytics</h1>
+            <p className={styles.subtitle}>Track your productivity and performance</p>
+          </div>
         </div>
       </div>
 

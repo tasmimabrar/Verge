@@ -166,7 +166,6 @@ export const Calendar: FC = () => {
   const navigate = useNavigate();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [isClosing, setIsClosing] = useState(false);
   
   // Store form state per date (keyed by date string)
   const [dateFormStates, setDateFormStates] = useState<Record<string, DateFormState>>({});
@@ -358,15 +357,7 @@ export const Calendar: FC = () => {
     if (selectedDate) {
       saveFormData();
     }
-    
-    // Trigger closing animation
-    setIsClosing(true);
-    
-    // Wait for animation to complete before removing from DOM
-    setTimeout(() => {
-      setSelectedDate(null);
-      setIsClosing(false);
-    }, 300); // Match CSS transition duration
+    setSelectedDate(null);
   };
   
   // Quick add task submission
@@ -444,7 +435,7 @@ export const Calendar: FC = () => {
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <AppLayout>
-        <div className={`${styles.container} ${selectedDate && !isClosing ? styles.sidebarOpen : ''}`}>
+        <div className={styles.container}>
           {/* Header */}
           <div className={styles.header}>
             <div className={styles.headerContent}>
@@ -533,7 +524,7 @@ export const Calendar: FC = () => {
 
           {/* Side Panel for Selected Date */}
           {selectedDate && (
-            <div className={`${styles.sidePanel} ${isClosing ? styles.closing : ''}`}>
+            <div className={styles.sidePanel}>
               <Card variant="elevated" padding="large" className={styles.sidePanelCard}>
                 <div className={styles.sidePanelHeader}>
                   <h2 className={styles.sidePanelTitle}>

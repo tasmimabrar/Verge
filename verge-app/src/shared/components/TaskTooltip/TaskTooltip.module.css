@@ -1,0 +1,123 @@
+/* TaskTooltip Component Styles */
+
+.tooltip {
+  position: fixed;
+  z-index: 9999;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-lg);
+  max-width: 280px;
+  pointer-events: none; /* Don't block mouse events */
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.header {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+}
+
+.priority,
+.status {
+  padding: 2px var(--spacing-xs);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+/* Priority colors */
+.priority.low {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--color-success);
+}
+
+.priority.medium {
+  background: rgba(234, 179, 8, 0.15);
+  color: var(--color-warning);
+}
+
+.priority.high {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-error);
+}
+
+/* Status colors */
+.status {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+}
+
+.status.todo {
+  background: rgba(156, 163, 175, 0.15);
+  color: var(--color-text-secondary);
+}
+
+.status.inprogress {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.status.done {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--color-success);
+}
+
+.status.postponed {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fb923c;
+}
+
+.title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-xs);
+  line-height: 1.3;
+}
+
+.notes {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-xs);
+  line-height: 1.4;
+  max-height: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.project {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+  font-size: var(--font-size-xs);
+  padding-top: var(--spacing-xs);
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--spacing-xs);
+}
+
+.projectLabel {
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}
+
+.projectName {
+  color: var(--color-text-secondary);
+}

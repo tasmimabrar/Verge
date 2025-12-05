@@ -1,6 +1,8 @@
 export { useAuth } from './useAuth';
 export { useScrollAnimation } from './useScrollAnimation';
 export { useInfiniteScroll } from './useInfiniteScroll';
+export { useDragAndDrop } from './useDragAndDrop';
+export type { UseDragAndDropOptions, UseDragAndDropReturn } from './useDragAndDrop';
 
 // Task management hooks
 export {

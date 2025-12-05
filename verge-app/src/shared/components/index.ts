@@ -30,6 +30,9 @@ export type { DropdownProps } from './Dropdown';
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 
+export { TaskTooltip } from './TaskTooltip';
+export type { TaskTooltipProps } from './TaskTooltip';
+
 export { SubtaskList } from './SubtaskList';
 export type { SubtaskListProps } from './SubtaskList';
 

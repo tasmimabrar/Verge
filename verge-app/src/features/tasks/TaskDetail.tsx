@@ -50,6 +50,7 @@ export const TaskDetail: FC = () => {
   // Track unsaved changes
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false); // Flag to prevent unsaved detection during auto-save
 
   // Queries
   const { data: task, isLoading, error } = useTask(taskId);
@@ -106,19 +107,19 @@ export const TaskDetail: FC = () => {
     }
   }, [task?.id]);
 
-  // Detect changes and mark as unsaved
+  // Detect changes and mark as unsaved (excluding auto-saved fields)
   useEffect(() => {
-    if (!task) return;
+    if (!task || isAutoSaving) return;
     
     const hasChanges = 
       titleValue !== task.title ||
       notesValue !== (task.notes || '') ||
-      dueDateValue !== (task.dueDate ? format(toDate(task.dueDate), 'yyyy-MM-dd') : '') ||
+      // Don't track dueDate changes (auto-saved independently)
       projectValue !== task.projectId ||
       tagsValue !== (task.tags ? task.tags.join(', ') : '');
     
     setHasUnsavedChanges(hasChanges);
-  }, [task, titleValue, notesValue, dueDateValue, projectValue, tagsValue]);
+  }, [task, titleValue, notesValue, projectValue, tagsValue, isAutoSaving]);
 
   // Unified save handler - batches all changes into ONE Firebase write
   const handleSaveAllChanges = async () => {
@@ -260,6 +261,7 @@ export const TaskDetail: FC = () => {
     if (!task || !taskId || !e.target.value) return;
     
     const newDateValue = e.target.value;
+    setIsAutoSaving(true); // Prevent unsaved change detection
     setDueDateValue(newDateValue);
     
     try {
@@ -280,6 +282,8 @@ export const TaskDetail: FC = () => {
       toast.error('Failed to update due date');
       // Revert on error
       setDueDateValue(task.dueDate ? format(toDate(task.dueDate), 'yyyy-MM-dd') : '');
+    } finally {
+      setIsAutoSaving(false); // Re-enable unsaved change detection
     }
   };
 
@@ -694,7 +698,7 @@ export const TaskDetail: FC = () => {
                   onClick={() => setEditingDueDate(true)}
                   title="Click to change due date"
                 >
-                  <FiCalendar /> Due {dueDateValue ? format(new Date(dueDateValue), 'MMM dd, yyyy') : 'No date'}
+                  <FiCalendar /> Due {dueDateValue ? format(dateStringToLocalDate(dueDateValue), 'MMM dd, yyyy') : 'No date'}
                 </span>
               )}
               

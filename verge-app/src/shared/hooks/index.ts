@@ -1,5 +1,6 @@
 export { useAuth } from './useAuth';
 export { useScrollAnimation } from './useScrollAnimation';
+export { useInfiniteScroll } from './useInfiniteScroll';
 
 // Task management hooks
 export {

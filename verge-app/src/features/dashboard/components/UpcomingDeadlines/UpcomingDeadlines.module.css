@@ -62,16 +62,8 @@
   flex-direction: column;
   flex: 1; /* Take remaining space */
   min-height: 0; /* Allow shrinking */
-  overflow: hidden; /* Enable internal scrolling */
-}
-
-.taskList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-  overflow-y: auto;
+  overflow-y: auto; /* Enable scrolling on content itself */
   padding-right: var(--spacing-xs);
-  flex: 1;
   
   /* Custom scrollbar for dark mode */
   &::-webkit-scrollbar {
@@ -91,6 +83,13 @@
       background: var(--color-text-tertiary);
     }
   }
+}
+
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  flex: 1;
 }
 
 .taskGroup {
@@ -120,6 +119,21 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding-left: var(--spacing-xs);
+}
+
+/* Load More Indicator */
+.loadMoreIndicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-md) 0;
+  margin-top: var(--spacing-sm);
+}
+
+.loadMoreText {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  font-style: italic;
 }
 
 /* Responsive Design */

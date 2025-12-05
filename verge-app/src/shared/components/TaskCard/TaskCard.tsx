@@ -152,7 +152,7 @@ export const TaskCard = ({
     return (
       <Card
         variant="default"
-        padding="medium"
+        padding="small"
         onClick={onClick ? handleClick : undefined}
         className={`${styles.taskCard} ${styles.preview} ${className}`}
       >
@@ -197,14 +197,14 @@ export const TaskCard = ({
                 className={`${styles.dueDate} ${isOverdue ? styles.overdue : ''} ${isDueToday ? styles.today : ''} ${onDueDateChange ? styles.editable : ''}`}
                 onClick={handleDueDateClick}
               >
-                <FiCalendar size={14} />
+                <FiCalendar size={12} />
                 {dueDateText}
               </span>
             )}
             
             {task.subtasks && task.subtasks.length > 0 && (
               <span className={styles.subtaskCount}>
-                <FiCheckSquare size={14} />
+                <FiCheckSquare size={12} />
                 {task.subtasks.filter(st => st.completed).length}/{task.subtasks.length}
               </span>
             )}

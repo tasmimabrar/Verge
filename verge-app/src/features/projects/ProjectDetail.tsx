@@ -49,6 +49,7 @@ export const ProjectDetail: FC = () => {
   // Track unsaved changes
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false); // Flag to prevent unsaved detection during auto-save
   
   const [showQuickAdd, setShowQuickAdd] = useState(false);
 
@@ -129,17 +130,17 @@ export const ProjectDetail: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project?.id]);
 
-  // Detect changes and mark as unsaved
+  // Detect changes and mark as unsaved (excluding auto-saved fields)
   useEffect(() => {
-    if (!project) return;
+    if (!project || isAutoSaving) return;
     
     const hasChanges = 
       nameValue !== project.name ||
-      descriptionValue !== (project.description || '') ||
-      dueDateValue !== (project.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '');
+      descriptionValue !== (project.description || '');
+      // Don't track dueDate changes (auto-saved independently)
     
     setHasUnsavedChanges(hasChanges);
-  }, [project, nameValue, descriptionValue, dueDateValue]);
+  }, [project, nameValue, descriptionValue, isAutoSaving]);
 
   // Unified save handler - batches all changes into ONE Firebase write
   const handleSaveAllChanges = async () => {
@@ -255,6 +256,7 @@ export const ProjectDetail: FC = () => {
     if (!project || !projectId || !e.target.value) return;
     
     const newDateValue = e.target.value;
+    setIsAutoSaving(true); // Prevent unsaved change detection
     setDueDateValue(newDateValue);
     
     try {
@@ -275,6 +277,8 @@ export const ProjectDetail: FC = () => {
       toast.error('Failed to update due date');
       // Revert on error
       setDueDateValue(project.dueDate ? format(toDate(project.dueDate), 'yyyy-MM-dd') : '');
+    } finally {
+      setIsAutoSaving(false); // Re-enable unsaved change detection
     }
   };
 
@@ -424,7 +428,7 @@ export const ProjectDetail: FC = () => {
                 />
               ) : (
                 <span className={`${styles.dueDate} ${styles.editable}`} onClick={() => setEditingDueDate(true)}>
-                  <FiCalendar /> Due {dueDateValue ? format(new Date(dueDateValue), 'MMM dd, yyyy') : 'No date'}
+                  <FiCalendar /> Due {dueDateValue ? format(dateStringToLocalDate(dueDateValue), 'MMM dd, yyyy') : 'No date'}
                 </span>
               )}
               <ProjectStatusDropdown

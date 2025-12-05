@@ -93,7 +93,7 @@ export const TodaysPriorities: FC = () => {
   };
 
   const handleViewAll = () => {
-    navigate('/tasks');
+    navigate('/tasks?filter=today');
   };
 
   return (

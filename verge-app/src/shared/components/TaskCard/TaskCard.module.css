@@ -27,30 +27,30 @@
 .previewContent {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs); /* Reduced from sm for compactness */
 }
 
 .preview .header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 .preview .titleRow {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs); /* Reduced from sm */
   flex: 1;
 }
 
 .preview .title {
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-sm); /* Reduced from md for compactness */
   font-weight: 600;
   color: var(--color-text-primary);
   margin: 0;
   flex: 1;
-  line-height: 1.4;
+  line-height: 1.3; /* Reduced from 1.4 for tighter spacing */
   
   /* Truncate long titles */
   overflow: hidden;
@@ -64,8 +64,8 @@
 .preview .metadata {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  font-size: var(--font-size-sm);
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-xs); /* Reduced from sm for compactness */
   color: var(--color-text-secondary);
 }
 

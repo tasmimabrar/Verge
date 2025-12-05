@@ -2,8 +2,8 @@ import type { FC, ChangeEvent } from 'react';
 import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { FiPlus, FiSearch, FiFilter, FiList } from 'react-icons/fi';
-import { Button, Card, Loader, EmptyState, TaskCard, AppLayout } from '@/shared/components';
+import { FiPlus, FiSearch, FiFilter, FiList, FiX } from 'react-icons/fi';
+import { Button, Card, Loader, EmptyState, TaskCard, AppLayout, Badge } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useTasks, useUpdateTask } from '@/shared/hooks/useTasks';
 import { useProjects } from '@/shared/hooks/useProjects';
@@ -211,30 +211,139 @@ export const TasksList: FC = () => {
         case 'overdue': return 'Overdue';
       }
     }
+    if (searchQuery) return 'Search Results';
     return 'All Tasks';
   };
+
+  /**
+   * Get active filters for badge display
+   * Returns filters in order: Quick Filter, Status, Priority, Project
+   */
+  const getActiveFilters = (): Array<{ 
+    label: string; 
+    value: string; 
+    color: 'default' | 'info' | 'success' | 'warning' | 'error'; 
+    onRemove: () => void 
+  }> => {
+    const filters: Array<{ 
+      label: string; 
+      value: string; 
+      color: 'default' | 'info' | 'success' | 'warning' | 'error'; 
+      onRemove: () => void 
+    }> = [];
+    
+    // Quick filter
+    if (quickFilter) {
+      let label = '';
+      switch (quickFilter) {
+        case 'today': label = 'Today'; break;
+        case 'week': label = 'This Week'; break;
+        case 'high': label = 'High Priority'; break;
+        case 'overdue': label = 'Overdue'; break;
+      }
+      filters.push({
+        label,
+        value: '',
+        color: 'info',
+        onRemove: () => updateFilter('filter', 'all')
+      });
+    }
+    
+    // Status filter
+    if (statusFilter !== 'all') {
+      const statusLabels: Record<string, string> = {
+        'todo': 'To Do',
+        'in_progress': 'In Progress',
+        'done': 'Done',
+        'postponed': 'Postponed'
+      };
+      filters.push({
+        label: 'Status',
+        value: statusLabels[statusFilter] || statusFilter,
+        color: 'default',
+        onRemove: () => updateFilter('status', 'all')
+      });
+    }
+    
+    // Priority filter
+    if (priorityFilter !== 'all') {
+      const priorityColor: Record<string, 'error' | 'warning' | 'success'> = {
+        'high': 'error',
+        'medium': 'warning',
+        'low': 'success'
+      };
+      filters.push({
+        label: 'Priority',
+        value: priorityFilter.charAt(0).toUpperCase() + priorityFilter.slice(1),
+        color: priorityColor[priorityFilter] || 'default',
+        onRemove: () => updateFilter('priority', 'all')
+      });
+    }
+    
+    // Project filter
+    if (projectFilter !== 'all') {
+      const projectName = getProjectName(projectFilter);
+      filters.push({
+        label: 'Project',
+        value: projectName || projectFilter,
+        color: 'info',
+        onRemove: () => updateFilter('project', 'all')
+      });
+    }
+    
+    return filters;
+  };
+
+  const activeFilters = getActiveFilters();
   
   return (
     <AppLayout>
       <div className={styles.container}>
         {/* Page Header */}
         <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <FiList className={styles.headerIcon} />
-          <div>
-            <h1 className={styles.title}>{getPageTitle()}</h1>
-            <p className={styles.subtitle}>
-              {filteredAndSortedTasks.length} {filteredAndSortedTasks.length === 1 ? 'task' : 'tasks'}
-            </p>
+          <div className={styles.headerLeft}>
+            <FiList className={styles.headerIcon} />
+            <div className={styles.headerInfo}>
+              <div className={styles.headerTitleRow}>
+                <h1 className={styles.title}>{getPageTitle()}</h1>
+                <span className={styles.taskCount}>
+                  {filteredAndSortedTasks.length} {filteredAndSortedTasks.length === 1 ? 'task' : 'tasks'}
+                </span>
+              </div>
+              {/* Filter Badges */}
+              {activeFilters.length > 0 && (
+                <div className={styles.filterBadges}>
+                  {activeFilters.map((filter, index) => (
+                    <Badge 
+                      key={index} 
+                      variant={filter.color}
+                      size="sm"
+                      className={styles.filterBadge}
+                    >
+                      {filter.label && `${filter.label}: `}{filter.value}
+                      <button 
+                        className={styles.filterBadgeRemove}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          filter.onRemove();
+                        }}
+                        aria-label={`Remove ${filter.label} filter`}
+                      >
+                        <FiX size={12} />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
+          <Button
+            variant="primary"
+            onClick={handleCreateTask}
+          >
+            <FiPlus /> Create Task
+          </Button>
         </div>
-        <Button
-          variant="primary"
-          onClick={handleCreateTask}
-        >
-          <FiPlus /> Create Task
-        </Button>
-      </div>
       
       {/* Filters and Search Bar */}
       <Card variant="outline" padding="medium" className={styles.filtersCard}>

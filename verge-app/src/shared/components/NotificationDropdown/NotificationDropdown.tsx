@@ -1,4 +1,5 @@
 import type { FC } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
@@ -6,8 +7,7 @@ import {
   FiAlertCircle, 
   FiClock, 
   FiX,
-  FiCheck,
-  FiAlertTriangle
+  FiCheck
 } from 'react-icons/fi';
 import { useAuth } from '@/shared/hooks';
 import { 
@@ -25,14 +25,22 @@ interface NotificationDropdownProps {
   onClose: () => void;
 }
 
+type NotificationFilter = 'all' | 'reminder' | 'overdue' | 'summary';
+
 export const NotificationDropdown: FC<NotificationDropdownProps> = ({ onClose }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [filter, setFilter] = useState<NotificationFilter>('all');
   
   const { data: notifications = [], isLoading } = useNotifications(user?.uid || '');
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
   const deleteNotification = useDeleteNotification();
+  
+  // Filter notifications based on selected filter
+  const filteredNotifications = filter === 'all' 
+    ? notifications 
+    : notifications.filter(n => n.type === filter);
 
   const getNotificationIcon = (type: Notification['type']) => {
     switch (type) {
@@ -40,8 +48,6 @@ export const NotificationDropdown: FC<NotificationDropdownProps> = ({ onClose })
         return <FiClock className={styles.iconReminder} />;
       case 'overdue':
         return <FiAlertCircle className={styles.iconOverdue} />;
-      case 'conflict':
-        return <FiAlertTriangle className={styles.iconConflict} />;
       case 'summary':
         return <FiBell className={styles.iconSummary} />;
     }
@@ -83,6 +89,7 @@ export const NotificationDropdown: FC<NotificationDropdownProps> = ({ onClose })
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
+  const filteredUnreadCount = filteredNotifications.filter(n => !n.read).length;
 
   return (
     <div className={styles.dropdown}>
@@ -95,7 +102,7 @@ export const NotificationDropdown: FC<NotificationDropdownProps> = ({ onClose })
             <span className={styles.unreadBadge}>{unreadCount}</span>
           )}
         </div>
-        {unreadCount > 0 && (
+        {filteredUnreadCount > 0 && (
           <button
             className={styles.markAllButton}
             onClick={handleMarkAllAsRead}
@@ -105,23 +112,55 @@ export const NotificationDropdown: FC<NotificationDropdownProps> = ({ onClose })
         )}
       </div>
 
+      {/* Filter Tabs */}
+      <div className={styles.filterTabs}>
+        <button
+          className={`${styles.filterTab} ${filter === 'all' ? styles.active : ''}`}
+          onClick={() => setFilter('all')}
+        >
+          All
+          {unreadCount > 0 && <span className={styles.filterBadge}>{unreadCount}</span>}
+        </button>
+        <button
+          className={`${styles.filterTab} ${filter === 'reminder' ? styles.active : ''}`}
+          onClick={() => setFilter('reminder')}
+        >
+          <FiClock className={styles.filterIcon} />
+          Reminders
+        </button>
+        <button
+          className={`${styles.filterTab} ${filter === 'overdue' ? styles.active : ''}`}
+          onClick={() => setFilter('overdue')}
+        >
+          <FiAlertCircle className={styles.filterIcon} />
+          Overdue
+        </button>
+        <button
+          className={`${styles.filterTab} ${filter === 'summary' ? styles.active : ''}`}
+          onClick={() => setFilter('summary')}
+        >
+          <FiBell className={styles.filterIcon} />
+          Summary
+        </button>
+      </div>
+
       {/* Content */}
       <div className={styles.content}>
         {isLoading ? (
           <div className={styles.loading}>
             <Loader variant="component" />
           </div>
-        ) : notifications.length === 0 ? (
+        ) : filteredNotifications.length === 0 ? (
           <div className={styles.empty}>
             <EmptyState
-              title="No notifications"
-              message="You're all caught up!"
+              title={filter === 'all' ? 'No notifications' : `No ${filter} notifications`}
+              message={filter === 'all' ? "You're all caught up!" : `No ${filter} notifications at the moment.`}
               icon={<FiBell />}
             />
           </div>
         ) : (
           <div className={styles.list}>
-            {notifications.map((notification) => (
+            {filteredNotifications.map((notification) => (
               <div
                 key={notification.id}
                 className={`${styles.notificationItem} ${!notification.read ? styles.unread : ''}`}
@@ -158,10 +197,10 @@ export const NotificationDropdown: FC<NotificationDropdownProps> = ({ onClose })
       </div>
 
       {/* Footer */}
-      {notifications.length > 0 && (
+      {filteredNotifications.length > 0 && (
         <div className={styles.footer}>
           <span className={styles.footerText}>
-            {notifications.length} total notification{notifications.length !== 1 ? 's' : ''}
+            {filteredNotifications.length} {filter === 'all' ? 'total' : filter} notification{filteredNotifications.length !== 1 ? 's' : ''}
           </span>
         </div>
       )}

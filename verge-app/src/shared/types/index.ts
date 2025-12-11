@@ -82,7 +82,6 @@ export interface UserSettings {
   notifications: {
     deadlineReminders: boolean;
     dailySummary: boolean;
-    conflictAlerts: boolean;
   };
   
   /** Default view when opening the app */
@@ -200,7 +199,7 @@ export interface Notification {
   userId: string;
   
   /** Notification type */
-  type: 'reminder' | 'overdue' | 'conflict' | 'summary';
+  type: 'reminder' | 'overdue' | 'summary';
   
   /** Notification title */
   title: string;

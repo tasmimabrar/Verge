@@ -12,6 +12,11 @@ import { NewTask, TaskDetail, TasksList } from '@/features/tasks';
 import { NewProject, ProjectDetail, ProjectsList } from '@/features/projects';
 import { Settings } from '@/features/settings';
 
+// Load test notification helpers in development
+if (import.meta.env.DEV) {
+  import('@/shared/utils/testNotifications');
+}
+
 function App() {
   return (
     <QueryProvider>

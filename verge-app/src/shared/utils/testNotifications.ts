@@ -80,17 +80,22 @@ export const createTestNotifications = async (userId: string, count: number = 2)
       type: 'reminder' | 'overdue' | 'summary', 
       data: { title: string; message: string; link?: string; taskId?: string; projectId?: string }
     ) => {
-      await addDoc(notificationsRef, {
+      // Only include optional fields if they have values (Firestore doesn't allow undefined)
+      const notification: Record<string, unknown> = {
         userId,
         type,
         title: data.title,
         message: data.message,
-        link: data.link,
-        taskId: data.taskId,
-        projectId: data.projectId,
         read: false,
         createdAt: serverTimestamp(),
-      });
+      };
+      
+      // Add optional fields only if defined
+      if (data.link) notification.link = data.link;
+      if (data.taskId) notification.taskId = data.taskId;
+      if (data.projectId) notification.projectId = data.projectId;
+      
+      await addDoc(notificationsRef, notification);
     };
     
     // Create requested number of each type

@@ -7,6 +7,7 @@ import {
   logout as firebaseLogout,
   onAuthStateChange,
 } from '@/lib/firebase';
+import { generateAllNotifications } from '@/shared/services/notificationService';
 
 interface User {
   uid: string;
@@ -35,10 +36,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChange((firebaseUser) => {
       if (firebaseUser) {
         // User is signed in
-        setUser({
+        const userData = {
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
+        };
+        setUser(userData);
+        
+        // Generate notifications for the user
+        generateAllNotifications(firebaseUser.uid).catch(err => {
+          console.error('Failed to generate notifications:', err);
         });
       } else {
         // User is signed out

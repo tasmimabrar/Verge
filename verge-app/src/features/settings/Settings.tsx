@@ -43,7 +43,6 @@ export const Settings: FC = () => {
     notifications: {
       deadlineReminders: true,
       dailySummary: false,
-      conflictAlerts: true,
     },
     defaultView: 'dashboard',
   });
@@ -376,21 +375,7 @@ export const Settings: FC = () => {
                   </button>
                 </div>
 
-                <div className={styles.settingItem}>
-                  <div className={styles.settingInfo}>
-                    <h3 className={styles.settingLabel}>Conflict Alerts</h3>
-                    <p className={styles.settingDescription}>
-                      Get alerted about overlapping deadlines and scheduling conflicts
-                    </p>
-                  </div>
-                  <button
-                    className={`${styles.toggle} ${settings.notifications.conflictAlerts ? styles.toggleActive : ''}`}
-                    onClick={() => handleNotificationToggle('conflictAlerts')}
-                    aria-label="Toggle Conflict Alerts"
-                  >
-                    <span className={styles.toggleSlider} />
-                  </button>
-                </div>
+
               </div>
             </div>
           )}

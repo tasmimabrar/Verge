@@ -22,24 +22,41 @@ import type { Task } from '@/shared/types';
 import { toDate } from '@/shared/utils/dateHelpers';
 
 /**
- * Check if a notification already exists for this task and type
+ * Get all existing unread notifications for a user (single query, used for batch checking)
  */
-const notificationExists = async (
-  userId: string, 
-  taskId: string, 
-  type: 'reminder' | 'overdue'
-): Promise<boolean> => {
+const getExistingNotifications = async (
+  userId: string
+): Promise<Set<string>> => {
   const notificationsRef = collection(db, 'notifications');
   const q = query(
     notificationsRef,
     where('userId', '==', userId),
-    where('taskId', '==', taskId),
-    where('type', '==', type),
     where('read', '==', false)
   );
   
   const snapshot = await getDocs(q);
-  return !snapshot.empty;
+  
+  // Create a Set of "taskId-type" keys for quick lookup
+  const existingKeys = new Set<string>();
+  snapshot.docs.forEach(doc => {
+    const data = doc.data();
+    if (data.taskId && data.type) {
+      existingKeys.add(`${data.taskId}-${data.type}`);
+    }
+  });
+  
+  return existingKeys;
+};
+
+/**
+ * Check if a notification already exists using the pre-fetched set
+ */
+const notificationExists = (
+  existingNotifications: Set<string>,
+  taskId: string,
+  type: 'reminder' | 'overdue'
+): boolean => {
+  return existingNotifications.has(`${taskId}-${type}`);
 };
 
 /**
@@ -74,6 +91,9 @@ const createNotification = async (
  */
 export const generateDeadlineReminders = async (userId: string): Promise<void> => {
   try {
+    // Get existing notifications ONCE (optimization)
+    const existingNotifications = await getExistingNotifications(userId);
+    
     // Get all user's tasks that are not done
     const tasksRef = collection(db, 'tasks');
     const q = query(
@@ -92,8 +112,8 @@ export const generateDeadlineReminders = async (userId: string): Promise<void> =
       
       // Check if task is due within 24 hours
       if (dueDate > now && dueDate <= tomorrow) {
-        // Check if notification already exists
-        const exists = await notificationExists(userId, task.id, 'reminder');
+        // Check if notification already exists (now O(1) lookup instead of query)
+        const exists = notificationExists(existingNotifications, task.id, 'reminder');
         
         if (!exists) {
           const hoursUntil = Math.round((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60));
@@ -121,6 +141,9 @@ export const generateDeadlineReminders = async (userId: string): Promise<void> =
  */
 export const generateOverdueNotifications = async (userId: string): Promise<void> => {
   try {
+    // Get existing notifications ONCE (optimization)
+    const existingNotifications = await getExistingNotifications(userId);
+    
     // Get all user's tasks that are not done
     const tasksRef = collection(db, 'tasks');
     const q = query(
@@ -138,8 +161,8 @@ export const generateOverdueNotifications = async (userId: string): Promise<void
       
       // Check if task is overdue
       if (dueDate < now) {
-        // Check if notification already exists
-        const exists = await notificationExists(userId, task.id, 'overdue');
+        // Check if notification already exists (now O(1) lookup instead of query)
+        const exists = notificationExists(existingNotifications, task.id, 'overdue');
         
         if (!exists) {
           const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));

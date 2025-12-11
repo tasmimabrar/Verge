@@ -33,6 +33,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Listen to Firebase auth state changes
   useEffect(() => {
+    let hasGeneratedNotifications = false;
+    
     const unsubscribe = onAuthStateChange((firebaseUser) => {
       if (firebaseUser) {
         // User is signed in
@@ -43,10 +45,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
         setUser(userData);
         
-        // Generate notifications for the user
-        generateAllNotifications(firebaseUser.uid).catch(err => {
-          console.error('Failed to generate notifications:', err);
-        });
+        // Generate notifications ONLY ONCE on initial login, not on every auth state change
+        if (!hasGeneratedNotifications) {
+          hasGeneratedNotifications = true;
+          
+          // Run in background, don't block UI
+          setTimeout(() => {
+            generateAllNotifications(firebaseUser.uid).catch(err => {
+              console.error('Failed to generate notifications:', err);
+            });
+          }, 1000); // Delay by 1 second to let app load first
+        }
       } else {
         // User is signed out
         setUser(null);

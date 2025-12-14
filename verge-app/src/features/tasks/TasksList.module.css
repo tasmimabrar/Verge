@@ -23,6 +23,12 @@
   flex: 1;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
 .headerInfo {
   display: flex;
   flex-direction: column;

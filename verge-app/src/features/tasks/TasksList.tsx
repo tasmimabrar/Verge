@@ -2,11 +2,12 @@ import type { FC, ChangeEvent } from 'react';
 import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { FiPlus, FiSearch, FiFilter, FiList, FiX } from 'react-icons/fi';
-import { Button, Card, Loader, EmptyState, TaskCard, AppLayout, Badge } from '@/shared/components';
+import { FiPlus, FiSearch, FiFilter, FiList, FiX, FiSave } from 'react-icons/fi';
+import { Button, Card, Loader, EmptyState, TaskCard, AppLayout, Badge, ViewSelector, SaveViewModal } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useTasks, useUpdateTask } from '@/shared/hooks/useTasks';
 import { useProjects } from '@/shared/hooks/useProjects';
+import { useSavedViews, useCreateSavedView } from '@/shared/hooks/useSavedViews';
 import { toDate } from '@/shared/utils/dateHelpers';
 import { isToday, isThisWeek, isAfter } from 'date-fns';
 import type { TaskStatus as TaskStatusType, TaskPriority } from '@/shared/types';
@@ -41,13 +42,58 @@ export const TasksList: FC = () => {
   
   // Local search state (not in URL to avoid too many updates)
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSaveViewModalOpen, setIsSaveViewModalOpen] = useState(false);
+  const [currentViewId, setCurrentViewId] = useState<string>();
   
   // Fetch data
   const { data: allTasks, isLoading: tasksLoading } = useTasks(user?.uid || '');
   const { data: projects, isLoading: projectsLoading } = useProjects(user?.uid || '');
+  const { data: savedViews = [] } = useSavedViews(user?.uid || '');
+  const createSavedView = useCreateSavedView(user?.uid || '');
   const updateTask = useUpdateTask();
   
   const isLoading = tasksLoading || projectsLoading;
+
+  const handleSaveView = async (viewName: string) => {
+    try {
+      await createSavedView.mutateAsync({
+        name: viewName,
+        type: 'tasks',
+        filters: {
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+          priority: priorityFilter !== 'all' ? priorityFilter : undefined,
+          projectId: projectFilter !== 'all' ? projectFilter : undefined,
+        },
+        sortBy,
+        sortOrder: sortOrder as 'asc' | 'desc',
+      });
+      setIsSaveViewModalOpen(false);
+    } catch (error) {
+      console.error('Failed to save view:', error);
+    }
+  };
+
+  const handleLoadView = (viewId: string) => {
+    if (!viewId) {
+      // Reset to all tasks
+      setSearchParams({});
+      setCurrentViewId(undefined);
+      return;
+    }
+
+    const view = savedViews.find(v => v.id === viewId);
+    if (!view) return;
+
+    const newParams = new URLSearchParams();
+    if (view.filters.status) newParams.set('status', view.filters.status);
+    if (view.filters.priority) newParams.set('priority', view.filters.priority);
+    if (view.filters.projectId) newParams.set('project', view.filters.projectId);
+    newParams.set('sort', view.sortBy);
+    newParams.set('order', view.sortOrder);
+
+    setSearchParams(newParams);
+    setCurrentViewId(viewId);
+  };
 
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
     try {
@@ -337,12 +383,25 @@ export const TasksList: FC = () => {
               )}
             </div>
           </div>
-          <Button
-            variant="primary"
-            onClick={handleCreateTask}
-          >
-            <FiPlus /> Create Task
-          </Button>
+          <div className={styles.headerActions}>
+            <ViewSelector
+              savedViews={savedViews}
+              currentViewId={currentViewId}
+              onSelectView={handleLoadView}
+            />
+            <Button
+              variant="outline"
+              onClick={() => setIsSaveViewModalOpen(true)}
+            >
+              <FiSave /> Save View
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreateTask}
+            >
+              <FiPlus /> Create Task
+            </Button>
+          </div>
         </div>
       
       {/* Filters and Search Bar */}
@@ -492,6 +551,22 @@ export const TasksList: FC = () => {
           </div>
         )}
       </div>
+
+      {/* Save View Modal */}
+      <SaveViewModal
+        isOpen={isSaveViewModalOpen}
+        onClose={() => setIsSaveViewModalOpen(false)}
+        onSave={handleSaveView}
+        currentFilters={{
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+          priority: priorityFilter !== 'all' ? priorityFilter : undefined,
+          projectId: projectFilter !== 'all' ? projectFilter : undefined,
+        }}
+        currentSortBy={sortBy}
+        currentSortOrder={sortOrder as 'asc' | 'desc'}
+        viewType="tasks"
+        isLoading={createSavedView.isPending}
+      />
     </div>
     </AppLayout>
   );

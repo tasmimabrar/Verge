@@ -1,11 +1,12 @@
 import type { FC, ChangeEvent } from 'react';
 import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FiPlus, FiSearch, FiFilter, FiFolder } from 'react-icons/fi';
-import { Button, Card, Loader, EmptyState, ProjectCard, AppLayout } from '@/shared/components';
+import { FiPlus, FiSearch, FiFilter, FiFolder, FiSave } from 'react-icons/fi';
+import { Button, Card, Loader, EmptyState, ProjectCard, AppLayout, ViewSelector, SaveViewModal } from '@/shared/components';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useProjects, useUpdateProject } from '@/shared/hooks/useProjects';
 import { useTasks } from '@/shared/hooks/useTasks';
+import { useSavedViews, useCreateSavedView } from '@/shared/hooks/useSavedViews';
 import { toDate } from '@/shared/utils/dateHelpers';
 import type { ProjectStatus } from '@/shared/types';
 import { toast } from 'sonner';
@@ -36,11 +37,51 @@ export const ProjectsList: FC = () => {
   
   // Local search state
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSaveViewModalOpen, setIsSaveViewModalOpen] = useState(false);
+  const [currentViewId, setCurrentViewId] = useState<string>();
   
   // Fetch data
   const { data: allProjects, isLoading } = useProjects(user?.uid || '');
   const { data: allTasks, isLoading: tasksLoading } = useTasks(user?.uid || '');
+  const { data: savedViews = [] } = useSavedViews(user?.uid || '');
+  const createSavedView = useCreateSavedView(user?.uid || '');
   const updateProject = useUpdateProject();
+
+  const handleSaveView = async (viewName: string) => {
+    try {
+      await createSavedView.mutateAsync({
+        name: viewName,
+        type: 'projects',
+        filters: {
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+        },
+        sortBy,
+        sortOrder: sortOrder as 'asc' | 'desc',
+      });
+      setIsSaveViewModalOpen(false);
+    } catch (error) {
+      console.error('Failed to save view:', error);
+    }
+  };
+
+  const handleLoadView = (viewId: string) => {
+    if (!viewId) {
+      setSearchParams({});
+      setCurrentViewId(undefined);
+      return;
+    }
+
+    const view = savedViews.find(v => v.id === viewId);
+    if (!view) return;
+
+    const newParams = new URLSearchParams();
+    if (view.filters.status) newParams.set('status', view.filters.status as string);
+    newParams.set('sort', view.sortBy);
+    newParams.set('order', view.sortOrder);
+
+    setSearchParams(newParams);
+    setCurrentViewId(viewId);
+  };
   
   /**
    * Calculate task stats for a project
@@ -161,12 +202,25 @@ export const ProjectsList: FC = () => {
             </p>
           </div>
         </div>
-        <Button
-          variant="primary"
-          onClick={handleCreateProject}
-        >
-          <FiPlus /> Create Project
-        </Button>
+        <div className={styles.headerActions}>
+          <ViewSelector
+            savedViews={savedViews.filter(v => v.type === 'projects')}
+            currentViewId={currentViewId}
+            onSelectView={handleLoadView}
+          />
+          <Button
+            variant="outline"
+            onClick={() => setIsSaveViewModalOpen(true)}
+          >
+            <FiSave /> Save View
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleCreateProject}
+          >
+            <FiPlus /> Create Project
+          </Button>
+        </div>
       </div>
       
       {/* Filters and Search Bar */}
@@ -274,6 +328,20 @@ export const ProjectsList: FC = () => {
           </div>
         )}
       </div>
+
+      {/* Save View Modal */}
+      <SaveViewModal
+        isOpen={isSaveViewModalOpen}
+        onClose={() => setIsSaveViewModalOpen(false)}
+        onSave={handleSaveView}
+        currentFilters={{
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+        }}
+        currentSortBy={sortBy}
+        currentSortOrder={sortOrder as 'asc' | 'desc'}
+        viewType="projects"
+        isLoading={createSavedView.isPending}
+      />
     </div>
     </AppLayout>
   );

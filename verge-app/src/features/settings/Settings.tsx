@@ -10,11 +10,14 @@ import {
   FiEye, 
   FiUser, 
   FiLogOut,
-  FiArrowLeft
+  FiArrowLeft,
+  FiEdit2,
+  FiTrash2
 } from 'react-icons/fi';
 // Removed Card and Button - using custom layout
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useTheme } from '@/shared/contexts';
+import { useSavedViews, useUpdateSavedView, useDeleteSavedView } from '@/shared/hooks/useSavedViews';
 import { updateUserSettings, getUserSettings } from '@/lib/firebase/firestore';
 import type { UserSettings } from '@/shared/types';
 import styles from './Settings.module.css';
@@ -50,6 +53,13 @@ export const Settings: FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [editingViewId, setEditingViewId] = useState<string | null>(null);
+  const [editingViewName, setEditingViewName] = useState('');
+
+  // Load saved views
+  const { data: savedViews = [] } = useSavedViews(user?.uid || '');
+  const updateSavedView = useUpdateSavedView(user?.uid || '');
+  const deleteSavedView = useDeleteSavedView(user?.uid || '');
 
   // Load user settings from Firebase
   useEffect(() => {
@@ -383,6 +393,81 @@ export const Settings: FC = () => {
           {/* Preferences Section */}
           {activeSection === 'preferences' && (
             <div className={styles.section}>
+              {/* Saved Views Management */}
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Saved Views
+                </label>
+                <p className={styles.settingDescription}>
+                  Manage your saved filter views for tasks and projects
+                </p>
+                
+                {savedViews.length === 0 ? (
+                  <p className={styles.emptyState}>No saved views yet. Save a view from the Tasks or Projects page.</p>
+                ) : (
+                  <div className={styles.viewsList}>
+                    {savedViews.map((view) => (
+                      <div key={view.id} className={styles.viewItem}>
+                        {editingViewId === view.id ? (
+                          <input
+                            type="text"
+                            value={editingViewName}
+                            onChange={(e) => setEditingViewName(e.target.value)}
+                            onBlur={async () => {
+                              if (editingViewName.trim()) {
+                                await updateSavedView.mutateAsync({
+                                  viewId: view.id,
+                                  updates: { name: editingViewName },
+                                });
+                              }
+                              setEditingViewId(null);
+                            }}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                e.currentTarget.blur();
+                              }
+                            }}
+                            className={styles.viewEditInput}
+                            autoFocus
+                          />
+                        ) : (
+                          <>
+                            <div className={styles.viewInfo}>
+                              <span className={styles.viewName}>{view.name}</span>
+                              <span className={styles.viewType}>{view.type}</span>
+                            </div>
+                            <div className={styles.viewActions}>
+                              <button
+                                className={styles.viewActionBtn}
+                                onClick={() => {
+                                  setEditingViewId(view.id);
+                                  setEditingViewName(view.name);
+                                }}
+                                aria-label="Rename view"
+                              >
+                                <FiEdit2 />
+                              </button>
+                              <button
+                                className={`${styles.viewActionBtn} ${styles.delete}`}
+                                onClick={async () => {
+                                  if (confirm(`Delete view "${view.name}"?`)) {
+                                    await deleteSavedView.mutateAsync(view.id);
+                                  }
+                                }}
+                                aria-label="Delete view"
+                              >
+                                <FiTrash2 />
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Default View Preference */}
               <div className={styles.formGroup}>
                 <label htmlFor="defaultView" className={styles.label}>
                   Default View

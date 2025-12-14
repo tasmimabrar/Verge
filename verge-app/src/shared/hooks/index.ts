@@ -46,3 +46,11 @@ export {
   useDeleteNotification,
   useCreateNotification,
 } from './useNotifications';
+
+// Saved Views hooks
+export {
+  useSavedViews,
+  useCreateSavedView,
+  useUpdateSavedView,
+  useDeleteSavedView,
+} from './useSavedViews';

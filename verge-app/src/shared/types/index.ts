@@ -58,9 +58,57 @@ export const AISuggestionType = {
 
 export type AISuggestionType = typeof AISuggestionType[keyof typeof AISuggestionType];
 
+/**
+ * View type for saved views
+ */
+export const ViewType = {
+  TASKS: 'tasks',
+  PROJECTS: 'projects',
+} as const;
+
+export type ViewType = typeof ViewType[keyof typeof ViewType];
+
 // ============================================================================
 // USER TYPES
 // ============================================================================
+
+/**
+ * Saved view configuration for custom filters and sorting
+ */
+export interface SavedView {
+  /** Unique identifier for the saved view */
+  id: string;
+  
+  /** User-defined name for the view */
+  name: string;
+  
+  /** Type of view (tasks or projects) */
+  type: ViewType;
+  
+  /** Filter configuration */
+  filters: {
+    /** Filter by status (single value) */
+    status?: TaskStatus | ProjectStatus | string;
+    
+    /** Filter by priority (tasks only, single value) */
+    priority?: TaskPriority | string;
+    
+    /** Filter by project ID (tasks only) */
+    projectId?: string;
+    
+    /** Filter by date range (optional) */
+    dateRange?: string;
+  };
+  
+  /** Sort field */
+  sortBy: string;
+  
+  /** Sort direction */
+  sortOrder: 'asc' | 'desc';
+  
+  /** Creation timestamp */
+  createdAt: Timestamp;
+}
 
 /**
  * User settings stored in Firestore
@@ -86,6 +134,9 @@ export interface UserSettings {
   
   /** Default view when opening the app */
   defaultView: 'dashboard' | 'tasks' | 'projects' | 'calendar';
+  
+  /** Saved custom views for tasks and projects */
+  savedViews?: SavedView[];
 }
 
 /**

@@ -48,6 +48,9 @@ export type { ProjectStatusDropdownProps } from './ProjectStatusDropdown';
 export { ViewToggle } from './ViewToggle';
 export type { ViewToggleProps } from './ViewToggle';
 
+export { ViewSelector } from './ViewSelector';
+export type { ViewSelectorProps } from './ViewSelector';
+
 // Domain-specific components
 export { TaskCard } from './TaskCard';
 export type { TaskCardProps } from './TaskCard';

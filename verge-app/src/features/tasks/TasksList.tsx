@@ -48,7 +48,7 @@ export const TasksList: FC = () => {
   // Fetch data
   const { data: allTasks, isLoading: tasksLoading } = useTasks(user?.uid || '');
   const { data: projects, isLoading: projectsLoading } = useProjects(user?.uid || '');
-  const { data: savedViews = [], isLoading: viewsLoading } = useSavedViews(user?.uid || '');
+  const { data: savedViews = [] } = useSavedViews(user?.uid || '');
   const createSavedView = useCreateSavedView(user?.uid || '');
   const updateTask = useUpdateTask();
   

@@ -51,6 +51,9 @@ export type { ViewToggleProps } from './ViewToggle';
 export { ViewSelector } from './ViewSelector';
 export type { ViewSelectorProps } from './ViewSelector';
 
+export { SaveViewModal } from './SaveViewModal';
+export type { SaveViewModalProps } from './SaveViewModal';
+
 // Domain-specific components
 export { TaskCard } from './TaskCard';
 export type { TaskCardProps } from './TaskCard';

@@ -14,6 +14,7 @@ export const queryKeys = {
     all: ['user'] as const,
     detail: (userId: string) => ['user', userId] as const,
     settings: (userId: string) => ['user', userId, 'settings'] as const,
+    savedViews: (userId: string) => ['user', userId, 'saved-views'] as const,
   },
   
   // Task queries

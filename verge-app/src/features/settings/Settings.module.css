@@ -352,6 +352,96 @@
   color: var(--color-text-primary);
 }
 
+/* Saved Views List */
+.emptyState {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+  background: var(--color-bg-secondary);
+  border-radius: var(--border-radius);
+}
+
+.viewsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.viewItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  transition: all 0.2s ease;
+}
+
+.viewItem:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.viewInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+}
+
+.viewName {
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.viewType {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  text-transform: capitalize;
+}
+
+.viewActions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.viewActionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewActionBtn:hover {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.viewActionBtn.delete:hover {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.viewEditInput {
+  flex: 1;
+  padding: var(--spacing-sm);
+  background: var(--color-bg-primary);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--border-radius);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-md);
+  font-weight: 500;
+}
+
 /* Loading State */
 .loadingState {
   display: flex;

@@ -22,6 +22,12 @@
   gap: var(--spacing-md);
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
 .headerIcon {
   font-size: var(--font-size-2xl);
   color: var(--color-primary);

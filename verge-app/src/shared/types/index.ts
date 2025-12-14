@@ -87,20 +87,17 @@ export interface SavedView {
   
   /** Filter configuration */
   filters: {
-    /** Filter by status (optional) */
-    status?: TaskStatus[] | ProjectStatus[];
+    /** Filter by status (single value) */
+    status?: TaskStatus | ProjectStatus | string;
     
-    /** Filter by priority (tasks only) */
-    priority?: TaskPriority[];
+    /** Filter by priority (tasks only, single value) */
+    priority?: TaskPriority | string;
     
     /** Filter by project ID (tasks only) */
     projectId?: string;
     
     /** Filter by date range (optional) */
-    dateRange?: {
-      start: Date;
-      end: Date;
-    };
+    dateRange?: string;
   };
   
   /** Sort field */

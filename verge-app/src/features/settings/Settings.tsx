@@ -12,7 +12,8 @@ import {
   FiLogOut,
   FiArrowLeft,
   FiEdit2,
-  FiTrash2
+  FiTrash2,
+  FiX
 } from 'react-icons/fi';
 // Removed Card and Button - using custom layout
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -134,6 +135,41 @@ export const Settings: FC = () => {
       ...prev,
       defaultView: view,
     }));
+  };
+
+  const handleStartEditView = (viewId: string, currentName: string) => {
+    setEditingViewId(viewId);
+    setEditingViewName(currentName);
+  };
+
+  const handleSaveViewName = async (viewId: string) => {
+    if (!editingViewName.trim()) {
+      toast.error('View name cannot be empty');
+      return;
+    }
+
+    try {
+      await updateSavedView.mutateAsync({
+        viewId,
+        updates: { name: editingViewName.trim() },
+      });
+      setEditingViewId(null);
+      setEditingViewName('');
+    } catch (error) {
+      console.error('Failed to rename view:', error);
+    }
+  };
+
+  const handleDeleteView = async (viewId: string, viewName: string) => {
+    if (!confirm(`Delete view "${viewName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await deleteSavedView.mutateAsync(viewId);
+    } catch (error) {
+      console.error('Failed to delete view:', error);
+    }
   };
 
   const handleLogout = async () => {
@@ -486,6 +522,83 @@ export const Settings: FC = () => {
                   <option value="projects">Projects List</option>
                   <option value="calendar">Calendar</option>
                 </select>
+              </div>
+
+              {/* Manage Saved Views */}
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Saved Views
+                </label>
+                <p className={styles.settingDescription}>
+                  Manage your custom filter views
+                </p>
+                
+                {savedViews.length === 0 ? (
+                  <div className={styles.emptyState}>
+                    No saved views yet. Create custom views from Tasks or Projects pages.
+                  </div>
+                ) : (
+                  <div className={styles.viewsList}>
+                    {savedViews.map((view) => (
+                      <div key={view.id} className={styles.viewItem}>
+                        {editingViewId === view.id ? (
+                          <>
+                            <input
+                              type="text"
+                              value={editingViewName}
+                              onChange={(e) => setEditingViewName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveViewName(view.id);
+                                if (e.key === 'Escape') setEditingViewId(null);
+                              }}
+                              className={styles.viewEditInput}
+                              autoFocus
+                            />
+                            <div className={styles.viewActions}>
+                              <button
+                                onClick={() => handleSaveViewName(view.id)}
+                                className={styles.viewActionBtn}
+                                aria-label="Save view name"
+                              >
+                                <FiEdit2 />
+                              </button>
+                              <button
+                                onClick={() => setEditingViewId(null)}
+                                className={styles.viewActionBtn}
+                                aria-label="Cancel editing"
+                              >
+                                <FiX />
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className={styles.viewInfo}>
+                              <span className={styles.viewName}>{view.name}</span>
+                              <span className={styles.viewType}>{view.type}</span>
+                            </div>
+                            <div className={styles.viewActions}>
+                              <button
+                                onClick={() => handleStartEditView(view.id, view.name)}
+                                className={styles.viewActionBtn}
+                                aria-label="Rename view"
+                              >
+                                <FiEdit2 />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteView(view.id, view.name)}
+                                className={`${styles.viewActionBtn} ${styles.delete}`}
+                                aria-label="Delete view"
+                              >
+                                <FiTrash2 />
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

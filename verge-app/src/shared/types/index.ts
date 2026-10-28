@@ -68,9 +68,38 @@ export const ViewType = {
 
 export type ViewType = typeof ViewType[keyof typeof ViewType];
 
+/**
+ * Dashboard widget types
+ */
+export const DashboardWidgetType = {
+  STATS: 'stats',
+  TODAYS_PRIORITIES: 'todays-priorities',
+  UPCOMING_DEADLINES: 'upcoming-deadlines',
+  OVERDUE_TASKS: 'overdue-tasks',
+} as const;
+
+export type DashboardWidgetType = typeof DashboardWidgetType[keyof typeof DashboardWidgetType];
+
 // ============================================================================
 // USER TYPES
 // ============================================================================
+
+/**
+ * Dashboard widget configuration
+ */
+export interface DashboardWidget {
+  /** Unique identifier for the widget instance */
+  id: string;
+  
+  /** Type of widget */
+  type: DashboardWidgetType;
+  
+  /** Position in the grid (0-indexed) */
+  position: number;
+  
+  /** Widget-specific configuration (optional) */
+  config?: Record<string, unknown>;
+}
 
 /**
  * Saved view configuration for custom filters and sorting
@@ -137,6 +166,12 @@ export interface UserSettings {
   
   /** Saved custom views for tasks and projects */
   savedViews?: SavedView[];
+  
+  /** Dashboard widget layout configuration */
+  dashboardLayout?: {
+    /** Array of widgets to display */
+    widgets: DashboardWidget[];
+  };
 }
 
 /**
